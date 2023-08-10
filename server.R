@@ -1734,7 +1734,8 @@ server <- function(input,output,session) {
                                                shape = 21,
                                                fill = NA,
                                                colour = "black",
-                                               show.legend = TRUE)
+                                               show.legend = TRUE) +
+      labs(size = "Abundance")
     }
     
     if (dim(taxon_weighted_scores)[1] != 0){
