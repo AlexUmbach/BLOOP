@@ -14,18 +14,12 @@ server <- function(input,output,session) {
   output$ranked_table_out <- renderDT(NULL)
   output$ranked_plot_out <- renderDT(NULL)
   
-  
   ## These monitor the status of the various start buttons on each tab
   read_start_pressed <- reactiveVal(FALSE)
   bar_start_pressed <- reactiveVal(FALSE)
   bubble_start_pressed <- reactiveVal(FALSE)
   pcoa_start_pressed <- reactiveVal(FALSE)
   ranked_start_pressed <- reactiveVal(FALSE)
-  
-
-  
-  
-  
   
   ## These pass on the metadata column names to all of the drop down menus
   observe({
@@ -151,10 +145,6 @@ server <- function(input,output,session) {
       read.table(file = input$contam_file$datapath,fill = TRUE, header = TRUE,sep = "\t")
     })
 
-    # contam_datafile = reactive({
-    #   req(input$contam_file)
-    #   readLines(input$contam_file$datapath) %>% as.list()
-    #
     contam_datafile = reactive({
       req(input$contam_file)
       read.table(file = input$contam_file$datapath,fill = TRUE, header = TRUE,sep = "\t")
@@ -1684,16 +1674,6 @@ server <- function(input,output,session) {
     merged_df <- merged_df %>% mutate_if(!names(.) %in% c("PCoA1", "PCoA2"), factor)
     
     # Define the available shapes and colors
-<<<<<<< Updated upstream
-    available_shapes <- c(21,22,23,24,25,19,17,15,14:1)
-    # fill_status <- c("fill","fill","fill","fill","fill","fill","colour","colour","colour","colour","colour","colour","colour","colour","colour","colour","colour","colour","colour","colour","colour","colour","colour",)
-    available_colors <- 1:26
-    available_fill <- 1:26
-    
-    # Plot PCoA using ggplot2 with shape and color based on metadata
-    pcoa_plot = ggplot(merged_df, aes(x = PCoA1, y = PCoA2)) +
-      geom_point(size = 4, aes(shape = get(input$pcoa_shape), colour = get(input$pcoa_fill_col), fill = get(input$pcoa_fill_col))) +
-=======
     available_shapes <- c(21,22,23,24,14:1)
     available_colors <- 2:27
     available_fill <- 2:27
@@ -1710,7 +1690,6 @@ server <- function(input,output,session) {
         colour = get(input$pcoa_fill_col),
         fill = get(input$pcoa_fill_col))) +
       # (eval(parse(text=paste("data_long_bubble$",input$b1_meta_group)))))
->>>>>>> Stashed changes
       # geom_point(size = 4, aes(shape = get(input$pcoa_shape), fill = get(input$pcoa_fill_col))) +
       labs(x = paste("Axis1 variance (", round(eigen_df$Axis1, 1),"%",")", sep = ""),
            y = paste("Axis2 variance (", round(eigen_df$Axis2, 1),"%",")", sep = "")) +
@@ -1718,7 +1697,8 @@ server <- function(input,output,session) {
       # scale_fill_manual(values = available_fill, name =  paste("Data2",eval(parse(text = input$pcoa_fill_col)),sep = "")) +
       # scale_color_manual(values = available_colors, name = "colour", guide = "none")
       scale_shape_manual(values = available_shapes) +
-      scale_fill_manual(values = available_fill)
+      scale_fill_manual(values = available_fill) + 
+      scale_colour_manual(values = available_fill)
       # scale_colour_manual(values = available_colors, name = "colour", guide = "none")
     
     
