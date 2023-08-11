@@ -1674,7 +1674,7 @@ server <- function(input,output,session) {
     merged_df <- merged_df %>% mutate_if(!names(.) %in% c("PCoA1", "PCoA2"), factor)
     
     # Define the available shapes and colors
-    available_shapes <- c(21,22,23,24,14:1)
+    available_shapes <- c(21,22,23,24,14,13:1)
     available_colors <- 2:27
     available_fill <- 2:27
     
