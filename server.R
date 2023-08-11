@@ -1684,6 +1684,7 @@ server <- function(input,output,session) {
     merged_df <- merged_df %>% mutate_if(!names(.) %in% c("PCoA1", "PCoA2"), factor)
     
     # Define the available shapes and colors
+<<<<<<< Updated upstream
     available_shapes <- c(21,22,23,24,25,19,17,15,14:1)
     # fill_status <- c("fill","fill","fill","fill","fill","fill","colour","colour","colour","colour","colour","colour","colour","colour","colour","colour","colour","colour","colour","colour","colour","colour","colour",)
     available_colors <- 1:26
@@ -1692,9 +1693,27 @@ server <- function(input,output,session) {
     # Plot PCoA using ggplot2 with shape and color based on metadata
     pcoa_plot = ggplot(merged_df, aes(x = PCoA1, y = PCoA2)) +
       geom_point(size = 4, aes(shape = get(input$pcoa_shape), colour = get(input$pcoa_fill_col), fill = get(input$pcoa_fill_col))) +
+=======
+    available_shapes <- c(21,22,23,24,14:1)
+    available_colors <- 2:27
+    available_fill <- 2:27
+    
+    # Plot PCoA using ggplot2 with shape and color based on metadata
+    pcoa_plot = ggplot(merged_df, aes(x = PCoA1, y = PCoA2)) +
+      # geom_point(size = 4, aes(shape = eval(parse(text = )), fill = get(input$pcoa_fill_col))) +
+      
+      geom_point(size = 4, aes(
+        # shape = eval(parse(text = paste("merged_df$",input$pcoa_shape))),
+        # colour = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))),
+        # fill = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))))) +
+        shape = get(input$pcoa_shape),
+        colour = get(input$pcoa_fill_col),
+        fill = get(input$pcoa_fill_col))) +
+      # (eval(parse(text=paste("data_long_bubble$",input$b1_meta_group)))))
+>>>>>>> Stashed changes
       # geom_point(size = 4, aes(shape = get(input$pcoa_shape), fill = get(input$pcoa_fill_col))) +
-      labs(x = paste("PCoA1 (", round(eigen_df$Axis1, 2),"%",")", sep = ""),
-           y = paste("PCoA2 (", round(eigen_df$Axis2, 2),"%",")", sep = "")) +
+      labs(x = paste("Axis1 variance (", round(eigen_df$Axis1, 1),"%",")", sep = ""),
+           y = paste("Axis2 variance (", round(eigen_df$Axis2, 1),"%",")", sep = "")) +
       # scale_shape_manual(values = available_shapes, name = paste("Data",eval(parse(text = input$pcoa_shape)),sep = "")) +
       # scale_fill_manual(values = available_fill, name =  paste("Data2",eval(parse(text = input$pcoa_fill_col)),sep = "")) +
       # scale_color_manual(values = available_colors, name = "colour", guide = "none")
