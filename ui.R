@@ -46,18 +46,86 @@ bloop_req = "BLOOP requires an ASV/OTU table produced from sequence data process
 ui <- navbarPage(id = "navbarID",
                  setBackgroundColor(color = "#E7E7E7"),
                  tags$style(HTML("
-        .navbar-default .navbar-brand {color:white;font-size:28px}
-        .navbar-default .navbar-brand:hover {color:white;}
-        .navbar { background-color:#3C8DBC;}
-        .navbar-default .navbar-nav > li > a {color:white;font-size:22px;black}
+                                 
+        .navbar-default .navbar-brand {
+        color:white;
+        font-size:28px
+        }
+        
+        .navbar-default .navbar-brand:hover {
+        color:white;
+        }
+        
+        .navbar {
+        background-color:#3C8DBC;
+        }
+        
+        .navbar-default .navbar-nav > li > a {
+        color:white;
+        font-size:22px;
+        black
+        }
+        
         .navbar-default .navbar-nav > .active > a,
+        
         .navbar-default .navbar-nav > .active > a:focus,
-        .navbar-default .navbar-nav > .active > a:hover {color:black;background-color:white;}
-        .navbar-default .navbar-nav > li > a:hover {color:black;background-color:white;text-decoration}
-        .well {background:white;}
-
-
-                  ")),
+        
+        .navbar-default .navbar-nav > .active > a:hover {
+        color:black;
+        background-color:white;
+        }
+        .navbar-default .navbar-nav > li > a:hover {
+        color:black;
+        background-color:white;
+        text-decoration
+        }
+        
+        .well {
+        background:white;
+        }
+        
+        #meta_table {
+          zoom: 0.80;
+        }
+        
+        #main_table {
+          zoom: 0.80;
+        }
+        
+        #contam_table {
+          zoom: 0.80;
+        }
+        
+        #proc_main {
+          zoom: 0.80;
+        }
+        
+        #proc_new_data {
+          zoom: 0.80;
+        }
+        
+        #proc_main_alt {
+          zoom: 0.80;
+        }
+        
+        #read_table_out {
+          zoom: 0.80;
+        }
+        
+        #bar_table_out {
+          zoom: 0.80;
+        }
+        
+        #bubble_table_out {
+          zoom: 0.80;
+        }
+        
+        
+        
+        
+        
+        
+                                 ")),
         
         title = "BLOOP v2.4",
         
@@ -176,12 +244,12 @@ ui <- navbarPage(id = "navbarID",
                                         The table is interactable and searchable and should allow you to cross reference samples and metadata with your original tables if you have any concerns
                                         about whether the data has been processed properly."))),
                              br(),
+                             textOutput("proc_new_text"),
+                             dataTableOutput("proc_main_alt"),
                              textOutput("proc_maintext",),
                              dataTableOutput("proc_main"),
                              textOutput("proc_alttext"),
                              dataTableOutput("proc_new_data"),
-                             textOutput("proc_new_text"),
-                             dataTableOutput("proc_main_alt"),
                              style = "overflow-y:scroll; max-height: 800px; position:relative;"
                              
                              
