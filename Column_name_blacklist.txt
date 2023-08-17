@@ -1,0 +1,6 @@
+Your metadata CANNOT contain the following column names as they are preserved for BLOOP
+Taxonomy
+TaxaName
+input
+rowID (or row.ID)
+FeatureID (or Feature.ID)

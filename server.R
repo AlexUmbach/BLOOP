@@ -75,7 +75,7 @@ server <- function(input, output, session) {
   ####  Upload tab ####
   {
     ## Main ASV table
-    output$main_table = renderDataTable({
+    output$main_table <- renderDataTable({
       req(input$main_file)
       read.table(
         file = input$main_file$datapath,
@@ -85,7 +85,7 @@ server <- function(input, output, session) {
       )
     })
     
-    main_datafile_upload = reactive({
+    main_datafile_upload <- reactive({
       req(input$main_file)
       read.table(
         file = input$main_file$datapath,
@@ -95,14 +95,14 @@ server <- function(input, output, session) {
       )
     })
     
-    main_datafile_og = reactive({
+    main_datafile_og <- reactive({
       main_datafile = main_datafile_upload()
       main_datafile[is.na(main_datafile)] <- 0
       main_datafile
     })
     
     ## Metadata table
-    meta_datafile_og = reactive({
+    meta_datafile_og <- reactive({
       req(input$meta_file)
       read.table(
         file = input$meta_file$datapath,
@@ -112,7 +112,7 @@ server <- function(input, output, session) {
       )
     })
     
-    output$meta_table = renderDataTable({
+    output$meta_table <- renderDataTable({
       req(input$meta_file)
       read.table(
         file = input$meta_file$datapath,
@@ -122,7 +122,7 @@ server <- function(input, output, session) {
       )
     })
     
-    meta_datafile = reactive({
+    meta_datafile <- reactive({
       meta_data_table = meta_datafile_og()
       main_data_table = main_datafile_og()
       meta_names <-
@@ -144,7 +144,7 @@ server <- function(input, output, session) {
     })
     
     ## Final sample filtering from main table
-    main_datafile = reactive({
+    main_datafile <- reactive({
       req(input$main_file)
       main_data_table = main_datafile_og()
       meta_data_table = meta_datafile()
@@ -162,7 +162,7 @@ server <- function(input, output, session) {
     })
     
     ## ASV contaminant table
-    output$contam_table = renderDataTable({
+    output$contam_table <- renderDataTable({
       req(input$contam_file)
       read.table(
         file = input$contam_file$datapath,
@@ -172,7 +172,7 @@ server <- function(input, output, session) {
       )
     })
     
-    contam_datafile = reactive({
+    contam_datafile <- reactive({
       req(input$contam_file)
       read.table(
         file = input$contam_file$datapath,
@@ -185,20 +185,20 @@ server <- function(input, output, session) {
   }
   
   ## Show the original table that was uploaded
-  output$proc_main = renderDataTable({
-    main_datafile = main_datafile()
-    output$proc_maintext = renderText("This is your original data")
+  output$proc_main <- renderDataTable({
+    main_datafile <- main_datafile()
+    output$proc_maintext <- renderText("This is your original data")
     
     # req(input$main_file)
     main_datafile
   })
   
   
-  #### Main table (Processing tab) ####
+  #### Main table (Processing tab) #### I SHOULD REMOVE THIS FOR SIMPLICITY
   
-  data_tran_react = reactive({
+  data_tran_react <- reactive({
     req(input$main_file)
-    data_tran = main_datafile()
+    data_tran <- main_datafile()
     
     ## Converting collapsed tables to ASV tables, and standardizing formatting, including adding rowID columns
     if (input$is_main_collapsed == "Yes") {
@@ -1395,6 +1395,7 @@ server <- function(input, output, session) {
     
     
     #### Generate the bubble plot ####
+    observeEvent(input$bubble_start, {
     bubble_plot_re = reactive({
       if (input$b1_new_old == "Old") {
         data_long_bubble = data_bubble_reactive_old()
@@ -1685,6 +1686,7 @@ server <- function(input, output, session) {
     )
     
   })
+  })
   
   output$b1_data_table = downloadHandler(
     filename = "bubble_data_table.csv",
@@ -1693,7 +1695,7 @@ server <- function(input, output, session) {
     }
   )
   
-  #### New Bray Curtis PCoA ####
+  #### Bray Curtis Triplot ####
   
   # Call in the main files
   observeEvent(input$pcoa_start, {
@@ -2588,7 +2590,6 @@ server <- function(input, output, session) {
         )
     }
     
-    
     ## Modify the general theme, including panel borders
     if (input$ranked_panel_border == "Yes") {
       bubble_plot = bubble_plot +
@@ -2637,9 +2638,6 @@ server <- function(input, output, session) {
     bubble_plot
     
   })
-  
-  
-  
   
   output$ranked_table_out = renderDataTable({
     table = ranked_abundance_table_re()
