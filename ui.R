@@ -67,10 +67,10 @@ ui <- navbarPage(id = "navbarID",
         tabPanel("WELCOME",
                  sidebarLayout(
                    sidebarPanel(Rversion,
-                                img(src="bloop_logo.png", height = "100%", width = "100%"),
+                                img(src="bloop_logo.png", height = "60%", width = "100%"),
                                 #h1("WOW!"),
                                 #img(src="eric-head.gi", height = "100%", width = "100%"),
-                                style = "overflow-y:scroll; max-height: 850px; position:relative; border-color:#000000",
+                                style = "overflow-y:scroll; height: 850px; position:relative; border-color:#000000",
                                 width = 3
                    ),
                    mainPanel(width = 9,
@@ -100,6 +100,18 @@ ui <- navbarPage(id = "navbarID",
                                width = 13,
                                style = "background-color:#FFFFFF; border-color:#000000; border-style: solid; border-width: 1.5px; margin-left:0px; margin-right:30px; padding: 10px",
                              ),
+                             br(),
+                             box(
+                               p(h1("Column name blacklist")),
+                               p("BLOOP requires priority when assigning column names. Because of this, you",strong("must not use"),"the following names in your metadata:"),
+                               p("TaxaName"),
+                               p("input"),
+                               p("Feature ID (or variants"),
+                               p("rowID (or variants)"),
+                               p("Taxonomy (or variants)"),
+                               width = 13,
+                               style = "background-color:#FFFFFF; border-color:#000000; border-style: solid; border-width: 1.5px; margin-left:0px; margin-right:30px; padding: 10px",
+                             )
                              
                    )
                  )
