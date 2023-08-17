@@ -120,11 +120,6 @@ ui <- navbarPage(id = "navbarID",
           zoom: 0.80;
         }
         
-        
-        
-        
-        
-        
                                  ")),
         
         title = "BLOOP v2.4",

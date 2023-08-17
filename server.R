@@ -123,8 +123,8 @@ server <- function(input, output, session) {
     })
     
     meta_datafile <- reactive({
-      meta_data_table = meta_datafile_og()
-      main_data_table = main_datafile_og()
+      meta_data_table <- meta_datafile_og()
+      main_data_table <- main_datafile_og()
       meta_names <-
         c(
           meta_data_table$SampleName,
@@ -146,8 +146,8 @@ server <- function(input, output, session) {
     ## Final sample filtering from main table
     main_datafile <- reactive({
       req(input$main_file)
-      main_data_table = main_datafile_og()
-      meta_data_table = meta_datafile()
+      main_data_table <- main_datafile_og()
+      meta_data_table <- meta_datafile()
       meta_names <-
         c(
           meta_data_table$SampleName,
@@ -202,16 +202,16 @@ server <- function(input, output, session) {
     
     ## Converting collapsed tables to ASV tables, and standardizing formatting, including adding rowID columns
     if (input$is_main_collapsed == "Yes") {
-      data_tran$Consensus.Lineage = data_tran$Feature.ID
-      # data_tran = within(data_tran, rm("Feature.ID"))
-      data_tran$Feature.ID = 1:nrow(data_tran)
-      data_tran$rowID = 1:nrow(data_tran)
+      data_tran$Consensus.Lineage <- data_tran$Feature.ID
+      # data_tran <- within(data_tran, rm("Feature.ID"))
+      data_tran$Feature.ID <- 1:nrow(data_tran)
+      data_tran$rowID <- 1:nrow(data_tran)
     } else {
       if (input$is_main_collapsed == "No") {
         if ("rowID" %in% colnames(data_tran)) {
           data_tran
         } else {
-          data_tran$rowID = 1:nrow(data_tran)
+          data_tran$rowID <- 1:nrow(data_tran)
         }
       }
     }
@@ -223,31 +223,31 @@ server <- function(input, output, session) {
   #### Transformed tables (processing tab) ####
   ## This needs to be changed to be only activated once, then again by any subsequent
   
-  data_tran_contam_filt_react = reactive({
+  data_tran_contam_filt_react <- reactive({
     #data_tran = data_tran_react()
     
     # if(input$is_main_collapsed == "No"){
     if (input$contam_filter == "Remove") {
-      contam_datafile = contam_datafile()
-      data_tran = data_tran_react()
-      rownames(data_tran) = data_tran$Feature.ID
-      # data_tran = data_tran[ ! data_tran$Feature.ID %in% contam_datafile$Feature.ID,]
+      contam_datafile <- contam_datafile()
+      data_tran <- data_tran_react()
+      rownames(data_tran) <- data_tran$Feature.ID
+      # data_tran <- data_tran[ ! data_tran$Feature.ID %in% contam_datafile$Feature.ID,]
       data_tran[contam_datafile$Feature.ID, !names(data_tran) %in% c("Consensus.Lineage",
                                                                      "Feature.ID",
                                                                      "ReprSequence",
                                                                      "rowID")] = 0
-      #rownames(data_tran) = 1:nrow(data_tran)
+      #rownames(data_tran) <- 1:nrow(data_tran)
     }
     
     ## There is an issue here I haven't sorted out
     if (input$contam_filter == "Analyze") {
-      contam_datafile = contam_datafile()
-      data_tran = data_tran_react()
-      data_tran = data_tran[data_tran$Feature.ID %in% contam_datafile$Feature.ID, ]
+      contam_datafile <- contam_datafile()
+      data_tran <- data_tran_react()
+      data_tran <- data_tran[data_tran$Feature.ID %in% contam_datafile$Feature.ID, ]
     }
     
     if (input$contam_filter == "No action") {
-      data_tran = data_tran_react()
+      data_tran <- data_tran_react()
     }
     # } else {
     #   data_tran
@@ -255,16 +255,16 @@ server <- function(input, output, session) {
     data_tran
   })
   
-  output$proc_new_data = renderDataTable({
-    data_tran = data_tran_contam_filt_react()
-    output$proc_new_text = renderText("This is your new dataframe")
+  output$proc_new_data <- renderDataTable({
+    data_tran <- data_tran_contam_filt_react()
+    output$proc_new_text <- renderText("This is your new dataframe")
     data_tran
   })
   
   
   
-  data_long_react = reactive({
-    data_tran = data_tran_contam_filt_react()
+  data_long_react <- reactive({
+    data_tran <- data_tran_contam_filt_react()
     
     ## Need to set the labels here first, not elsewhere (like in other reactive elements)
     if (input$is_main_collapsed == "Yes") {
@@ -347,16 +347,16 @@ server <- function(input, output, session) {
     filtered_table[is.na(filtered_table)] <- 0
     
     ## Convert table into % abundance
-    data_prop = filtered_table / colSums(filtered_table)
-    # data_prop = prop.table(as.matrix(filtered_table), 2) * 100
+    data_prop <- filtered_table / colSums(filtered_table)
+    # data_prop <- prop.table(as.matrix(filtered_table), 2) * 100
     
     ## WORKING ##
-    # data_prop = prop.table(as.matrix(filtered_table), 2) * 100
-    # data_prop_mat = data_prop
-    # data_prop = as.data.frame(data_prop)
+    # data_prop <- prop.table(as.matrix(filtered_table), 2) * 100
+    # data_prop_mat <- data_prop
+    # data_prop <- as.data.frame(data_prop)
     
     ## Add full taxonomy into prop table and reassign row names to their truncated names:
-    data_prop = as.data.frame(data_prop)
+    data_prop <- as.data.frame(data_prop)
     data_prop$Taxonomy <- rownames(data_prop)
     rownames(data_prop) <- lineage_OTU$TaxaName
     
@@ -380,17 +380,17 @@ server <- function(input, output, session) {
     data_long
   })
   
-  output$proc_main_alt = renderDataTable({
-    data_long = data_long_react()
-    output$proc_alttext = renderText("This is your processed data")
+  output$proc_main_alt <- renderDataTable({
+    data_long <- data_long_react()
+    output$proc_alttext <- renderText("This is your processed data")
     data_long
   })
   
   
   #### New Bubble table generation ####
-  data_unfiltered_table = reactive({
-    main_datafile = main_datafile()
-    data_tran = data_tran_contam_filt_react()
+  data_unfiltered_table <- reactive({
+    main_datafile <- main_datafile()
+    data_tran <- data_tran_contam_filt_react()
     req(input$main_file)
     req(input$meta_file)
     
@@ -460,14 +460,14 @@ server <- function(input, output, session) {
     rownames(data_tran) <- full_lineage$TaxaName
     
     ## Keep this unfiltered
-    unfiltered_table = data_tran
+    unfiltered_table <- data_tran
     unfiltered_table
   })
   
   
   ## This filters the table to prepare it for prop table functions. This must be a separate reactive so that the reprsequences can be maintained
-  data_filtered_table = reactive({
-    unfiltered_table = data_unfiltered_table()
+  data_filtered_table <- reactive({
+    unfiltered_table <- data_unfiltered_table()
     cols_to_filter <-
       c("OTU.ID",
         "rowID",
@@ -481,8 +481,8 @@ server <- function(input, output, session) {
     filtered_table
   })
   
-  data_filtered_table_abridged_names_re = reactive({
-    unfiltered_table = data_unfiltered_table()
+  data_filtered_table_abridged_names_re <- reactive({
+    unfiltered_table <- data_unfiltered_table()
     
   })
   
@@ -490,12 +490,9 @@ server <- function(input, output, session) {
   
   #### Total read plot ####
   
-  observeEvent(input$read_start, {
-    read_start_pressed(TRUE)
-    
-    data_read_table = reactive({
-      filtered_table = data_filtered_table()
-      meta_data_table = meta_datafile()
+    data_read_table <- reactive({
+      filtered_table <- data_filtered_table()
+      meta_data_table <- meta_datafile()
       
       data_read <- filtered_table
       data_read <- rbind(data_read, Total = colSums(data_read))
@@ -532,15 +529,15 @@ server <- function(input, output, session) {
                levels = unique(data_read_total$SampleName))
       
       ## Make a list of unique metadata
-      read_meta_list = unique(data_read_total$input$read_meta_group)
+      read_meta_list <- unique(data_read_total$input$read_meta_group)
       
       read_meta_list
       data_read_total
     })
     
     
-    data_read_plot = reactive({
-      data_read_total = data_read_table()
+    data_read_plot <- reactive({
+      data_read_total <- data_read_table()
       
       
       if (input$box_select == "Bar") {
@@ -575,7 +572,7 @@ server <- function(input, output, session) {
       }
       
       if (input$box_select == "Box") {
-        read_plot = ggplot(data = data_read_total,
+        read_plot <- ggplot(data = data_read_total,
                            #aes(x=as.factor(input$read_sortby_axis), y=Total, width = input$read_width))
                            aes(
                              x = as.factor(input$read_sortby_axis),
@@ -583,7 +580,7 @@ server <- function(input, output, session) {
                              width = 2
                            ))
         
-        read_plot = read_plot + geom_boxplot(
+        read_plot <- read_plot + geom_boxplot(
           aes(fill = as.factor(eval(
             parse(text = paste(
               "data_read_total$", input$read_sortby_axis
@@ -596,7 +593,7 @@ server <- function(input, output, session) {
           outlier.shape = NA
         )
         
-        read_plot = read_plot + stat_summary(
+        read_plot <- read_plot + stat_summary(
           fun = mean,
           geom = "point",
           shape = 15,
@@ -604,7 +601,7 @@ server <- function(input, output, session) {
           colour = "red"
         )
         
-        read_plot = read_plot + geom_jitter()
+        read_plot <- read_plot + geom_jitter()
         
         read_plot
         
@@ -615,7 +612,7 @@ server <- function(input, output, session) {
                                                   limit = (c(0, input$read_yaxis_limit)))
 
       ## Add faceting for sorting
-      read_plot = read_plot +
+      read_plot <- read_plot +
         facet_grid(
           ~ eval(parse(text = input$read_sortby_axis)),
           space = "free",
@@ -678,8 +675,8 @@ server <- function(input, output, session) {
       read_plot
     })
     
-    output$read_table_out = renderDataTable({
-      read_table = data_read_table()
+    output$read_table_out <- renderDataTable({
+      read_table <- data_read_table()
       read_table
     })
     
@@ -697,8 +694,6 @@ server <- function(input, output, session) {
     width = read_plot_width,
     height = read_plot_height)
     
-    # End of start button observe event
-  })
   output$read_download = downloadHandler(
     filename = "read_plot.pdf",
     contentType = ".pdf",
@@ -718,12 +713,11 @@ server <- function(input, output, session) {
   
   
   #### Bar Plot ####
-  observeEvent(input$bar_start, {
-    data_long_bar_filt_re = reactive({
-      filtered_table = data_filtered_table()
-      bar_data_prop = data_filtered_table()
-      meta_data_table = meta_datafile()
-      unfiltered_table = data_unfiltered_table()
+    data_long_bar_filt_re <- reactive({
+      filtered_table <- data_filtered_table()
+      bar_data_prop <- data_filtered_table()
+      meta_data_table <- meta_datafile()
+      unfiltered_table <- data_unfiltered_table()
       
       ## Initial transformations:
       ## Produce a prop table and filter it to a specific threshold
@@ -732,8 +726,8 @@ server <- function(input, output, session) {
       
       ## If the table contains any columns with zero reads, the column reports NA, and the script fails after this point.
       ## These columns must be removed first.
-      bar_data_prop = bar_data_prop[, colSums(is.na(bar_data_prop)) == 0]
-      bar_data_prop = bar_data_prop %>% filter_all(any_vars(. >= as.numeric(input$bar_cutoff)))
+      bar_data_prop <- bar_data_prop[, colSums(is.na(bar_data_prop)) == 0]
+      bar_data_prop <- bar_data_prop %>% filter_all(any_vars(. >= as.numeric(input$bar_cutoff)))
       
       ## Reassigns taxonomy to the filtered table
       bar_data_prop$Taxonomy <- rownames(bar_data_prop)
@@ -821,11 +815,11 @@ server <- function(input, output, session) {
         )
       
       ## Add representative sequences back into the data by merging tables based on taxonomy. If collapsed, skips.
-      unfiltered_table$Taxonomy = rownames(unfiltered_table)
+      unfiltered_table$Taxonomy <- rownames(unfiltered_table)
       if (input$is_main_collapsed == "No") {
-        unfiltered_table = unfiltered_table[, c("Taxonomy", "ReprSequence")]
+        unfiltered_table <- unfiltered_table[, c("Taxonomy", "ReprSequence")]
       }
-      bar_data_long = left_join(bar_data_long,
+      bar_data_long <- left_join(bar_data_long,
                                 unfiltered_table,
                                 by = "Taxonomy",
                                 copy = TRUE)
@@ -864,7 +858,7 @@ server <- function(input, output, session) {
       # }
       
       ## Attach full taxonomic lineage and separate into classifications, and fix labelling issues:
-      data_long_bar$Sep = data_long_bar$Taxonomy
+      data_long_bar$Sep <- data_long_bar$Taxonomy
       data_long_bar$Sep <- gsub("(d__)", "", data_long_bar$Sep)
       data_long_bar$Sep <- gsub("(p__)", "", data_long_bar$Sep)
       data_long_bar$Sep <- gsub("(c__)", "", data_long_bar$Sep)
@@ -892,7 +886,7 @@ server <- function(input, output, session) {
       
       data_long_bar$Identifier <- 1:nrow(data_long_bar)
       # data_long_bar_filt <- dplyr::filter(data_long_bar, Percentage > as.numeric(input$bar_cutoff))
-      data_long_bar_filt = data_long_bar
+      data_long_bar_filt <- data_long_bar
       
       
       ## Include only specific taxa  within the plot
@@ -929,9 +923,9 @@ server <- function(input, output, session) {
       # data_long_bar_filt <- bind_rows(data_long_bar_filt,bar_ex_samples)
       
       
-      barfilt = colnames(meta_data_table)
-      barfilt = barfilt[barfilt != "SampleName"]
-      data_long_bar_filt = select(data_long_bar_filt,-barfilt)
+      barfilt <- colnames(meta_data_table)
+      barfilt <- barfilt[barfilt != "SampleName"]
+      data_long_bar_filt <- select(data_long_bar_filt,-barfilt)
       
       
       ## Modify the labels again to remove numbers from the legend:
@@ -955,8 +949,8 @@ server <- function(input, output, session) {
       data_long_bar_filt
     })
     
-    barplot_reactive = reactive({
-      data_long_bar_filt = data_long_bar_filt_re()
+    barplot_reactive <- reactive({
+      data_long_bar_filt <- data_long_bar_filt_re()
       
       bar_plot <- ggplot(data = data_long_bar_filt,
                          aes(x = SampleName,
@@ -972,7 +966,7 @@ server <- function(input, output, session) {
       )
       
       ## Add faceting for sorting
-      bar_plot = bar_plot +
+      bar_plot <- bar_plot +
         facet_grid(
           ~ eval(parse(text = input$bar_sortby_xaxis)),
           space = "free",
@@ -1056,7 +1050,7 @@ server <- function(input, output, session) {
           sep = ""
         )
       )
-      bar_plot = bar_plot + xlab("Samples")
+      bar_plot <- bar_plot + xlab("Samples")
       bar_plot <- bar_plot + labs(fill = "Taxonomy")
       
       #bar_plot<-bar_plot + ylab(input$bar_yaxis)
@@ -1064,27 +1058,24 @@ server <- function(input, output, session) {
     })
     
     
-    output$bar_table_out = renderDataTable({
-      bar_table_out = data_long_bar_filt_re()
+    output$bar_table_out <- renderDataTable({
+      bar_table_out <- data_long_bar_filt_re()
       bar_table_out
     })
     
     ## You must define the input for width/height within a reactive context, then call it in the output.
-    taxa_plot_width = reactive(input$taxa_plot_out_w)
-    taxa_plot_height = reactive(input$taxa_plot_out_h)
+    taxa_plot_width <- reactive(input$taxa_plot_out_w)
+    taxa_plot_height <- reactive(input$taxa_plot_out_h)
     
-    output$taxa_bar = renderPlot({
-      barplot = barplot_reactive()
+    output$taxa_bar <- renderPlot({
+      barplot <- barplot_reactive()
       barplot
     },
     width = taxa_plot_width,
     height = taxa_plot_height)
     
-  })
-  
-  
-  
-  output$bar_download = downloadHandler(
+
+  output$bar_download <- downloadHandler(
     filename = "bar_plot.pdf",
     contentType = ".pdf",
     content = function(bar_file) {
@@ -1101,16 +1092,15 @@ server <- function(input, output, session) {
   )
   
   #### New bubble plot ####
-  observeEvent(input$bubble_start, {
-    data_bubble_reactive_new = reactive({
-      data_tran = data_tran_react()
-      meta_data_table = meta_datafile()
-      unfiltered_table = data_unfiltered_table()
-      filtered_table = data_filtered_table()
+    data_bubble_reactive_new <- reactive({
+      data_tran <- data_tran_react()
+      meta_data_table <- meta_datafile()
+      unfiltered_table <- data_unfiltered_table()
+      filtered_table <- data_filtered_table()
 
       # ## This removes samples from the ASV tables that don't have a corresponding metadata row: THIS IS WORKING
-      meta_samplist = meta_data_table$SampleName
-      filtered_table = filtered_table[, names(filtered_table) %in% meta_samplist]
+      meta_samplist <- meta_data_table$SampleName
+      filtered_table <- filtered_table[, names(filtered_table) %in% meta_samplist]
       
       ## Initial transformations:
       ## Produce a prop table and filter it to a specific threshold
@@ -1119,10 +1109,10 @@ server <- function(input, output, session) {
       
       ## If the table contains any columns with zero reads, the column reports NA, and the script fails after this point.
       ## These columns must be removed first.
-      B2_data_prop = B2_data_prop[, colSums(is.na(B2_data_prop)) == 0]
+      B2_data_prop <- B2_data_prop[, colSums(is.na(B2_data_prop)) == 0]
       
       ## This checks all columns for a value above a threshold and keeps all rows if found. However, this screws up downstream metadata filtering, so I need to figure out how to change this. During the metadata step, any samples without representation in the metadata table will be removed. If those removed samples contained reads above a threshold, the remaining samples will stay in the filtered table (and they should not).
-      B2_data_prop = B2_data_prop %>% filter_all(any_vars(. >= as.numeric(input$b1_ab_thresh)))
+      B2_data_prop <- B2_data_prop %>% filter_all(any_vars(. >= as.numeric(input$b1_ab_thresh)))
       
       ## Reassigns taxonomy to the filtered table
       B2_data_prop$Taxonomy <- rownames(B2_data_prop)
@@ -1212,11 +1202,11 @@ server <- function(input, output, session) {
       
       
       ## Add representative sequences back into the data by merging tables based on taxonomy. If collapsed, skips.
-      unfiltered_table$Taxonomy = rownames(unfiltered_table)
+      unfiltered_table$Taxonomy <- rownames(unfiltered_table)
       if (input$is_main_collapsed == "No") {
-        unfiltered_table = unfiltered_table[, c("Taxonomy", "ReprSequence")]
+        unfiltered_table <- unfiltered_table[, c("Taxonomy", "ReprSequence")]
       }
-      B2_data_long = left_join(B2_data_long,
+      B2_data_long <- left_join(B2_data_long,
                                unfiltered_table,
                                by = "Taxonomy",
                                copy = TRUE)
@@ -1267,7 +1257,7 @@ server <- function(input, output, session) {
       
    
       ## Attach full taxonomic lineage and separate into classifications, and fix labelling issues:
-      data_long_bubble$Sep = data_long_bubble$Taxonomy
+      data_long_bubble$Sep <- data_long_bubble$Taxonomy
       data_long_bubble$Sep <- gsub("(d__)", "", data_long_bubble$Sep)
       data_long_bubble$Sep <- gsub("(p__)", "", data_long_bubble$Sep)
       data_long_bubble$Sep <- gsub("(c__)", "", data_long_bubble$Sep)
@@ -1311,9 +1301,9 @@ server <- function(input, output, session) {
     })
     
     #### Old bubble plot ####
-    data_bubble_reactive_old = reactive({
-      data_long = data_long_react()
-      meta_data_table = meta_datafile()
+    data_bubble_reactive_old <- reactive({
+      data_long <- data_long_react()
+      meta_data_table <- meta_datafile()
       
       
       ## Filter above a threshold, append metadata, and round decimals
@@ -1364,7 +1354,7 @@ server <- function(input, output, session) {
       
       
       ## Attach full taxonomic lineage and separate into classifications, and fix labelling issues:
-      data_long_bubble$Sep = data_long_bubble$Taxonomy
+      data_long_bubble$Sep <- data_long_bubble$Taxonomy
       data_long_bubble$Sep <- gsub("(d__)", "", data_long_bubble$Sep)
       data_long_bubble$Sep <- gsub("(p__)", "", data_long_bubble$Sep)
       data_long_bubble$Sep <- gsub("(c__)", "", data_long_bubble$Sep)
@@ -1396,11 +1386,11 @@ server <- function(input, output, session) {
     
     #### Generate the bubble plot ####
     observeEvent(input$bubble_start, {
-    bubble_plot_re = reactive({
+    bubble_plot_re <- reactive({
       if (input$b1_new_old == "Old") {
-        data_long_bubble = data_bubble_reactive_old()
+        data_long_bubble <- data_bubble_reactive_old()
       } else {
-        data_long_bubble = data_bubble_reactive_new()
+        data_long_bubble <- data_bubble_reactive_new()
       }
       
       ## Plot the Data:
@@ -1433,7 +1423,7 @@ server <- function(input, output, session) {
       ## Sorting the y-axis and faceting options
       
       if (input$b1_second_facet == "No") {
-        bubble_plot = bubble_plot +
+        bubble_plot <- bubble_plot +
           
           if (input$b1_confirm_sort == "Yes") {
             if ((input$b1_facet_side_x == "Top") &
@@ -1488,7 +1478,7 @@ server <- function(input, output, session) {
       
       
       if (input$b1_second_facet == "Yes") {
-        bubble_plot = bubble_plot +
+        bubble_plot <- bubble_plot +
           
           
           if (input$b1_confirm_sort == "Yes") {
@@ -1608,7 +1598,7 @@ server <- function(input, output, session) {
       
       ## Modify the general theme, including panel borders
       if (input$b1_panel_border == "Yes") {
-        bubble_plot = bubble_plot +
+        bubble_plot <- bubble_plot +
           theme_bw() + theme(
             axis.text = element_text(colour = "black", size = 10),
             axis.line = element_blank(),
@@ -1629,7 +1619,7 @@ server <- function(input, output, session) {
       
       ## modify the general theme, removing panel borders
       if (input$b1_panel_border == "No") {
-        bubble_plot = bubble_plot +
+        bubble_plot <- bubble_plot +
           theme_bw() + theme(
             axis.text = element_text(colour = "black", size = 10),
             #strip.background.y = element_rect(fill = "white"),
@@ -1651,25 +1641,25 @@ server <- function(input, output, session) {
       
     })
     
-    output$b1_table_out = renderDataTable({
+    output$b1_table_out <- renderDataTable({
       if (input$b1_new_old == "New") {
-        bubble_table = data_bubble_reactive_new()
+        bubble_table <- data_bubble_reactive_new()
       } else {
-        bubble_table = data_bubble_reactive_old()
+        bubble_table <- data_bubble_reactive_old()
       }
     })
     
-    b1_plot_height = reactive(input$b1_plot_out_h)
-    b1_plot_width = reactive(input$b1_plot_out_w)
+    b1_plot_height <- reactive(input$b1_plot_out_h)
+    b1_plot_width <- reactive(input$b1_plot_out_w)
     
-    output$bubble_out = renderPlot({
-      bubble_plot = bubble_plot_re()
+    output$bubble_out <- renderPlot({
+      bubble_plot <- bubble_plot_re()
       bubble_plot
     },
     width = b1_plot_width,
     height = b1_plot_height)
     
-    output$b1_bubble_download = downloadHandler(
+    output$b1_bubble_download <- downloadHandler(
       filename = "bubble_plot.pdf",
       contentType = ".pdf",
       content = function(bubble_file) {
@@ -1686,9 +1676,8 @@ server <- function(input, output, session) {
     )
     
   })
-  })
   
-  output$b1_data_table = downloadHandler(
+  output$b1_data_table <- downloadHandler(
     filename = "bubble_data_table.csv",
     content = function(bubble_table) {
       write.csv(data_bubble_reactive_new(), bubble_table)
@@ -1698,10 +1687,9 @@ server <- function(input, output, session) {
   #### Bray Curtis Triplot ####
   
   # Call in the main files
-  observeEvent(input$pcoa_start, {
-    pcoa_data_main_re = reactive({
-      meta_data_table = meta_datafile()
-      main_data_table = data_tran_react()
+    pcoa_data_main_re <- reactive({
+      meta_data_table <- meta_datafile()
+      main_data_table <- data_tran_react()
       
       # # Filter for samples present in the metadata file -- Not sure if this is needed
       # meta_names <- c(meta_data_table$SampleName, "Consensus.Lineage", "rowID", "Feature.ID", "ReprSequence")
@@ -1711,7 +1699,7 @@ server <- function(input, output, session) {
       ## Simple taxonomy corrections
       main_data_table$Consensus.Lineage <-
         gsub(" ", "", main_data_table$Consensus.Lineage)
-      labels = main_data_table$Consensus.Lineage
+      labels <- main_data_table$Consensus.Lineage
       
       ## Cleans up labels and removes uncultured/ambiguous taxa
       labels <- gsub("_[0-9]*$", "", labels)
@@ -1733,12 +1721,12 @@ server <- function(input, output, session) {
                                       "_"))
       
       ## Add the last resolve taxon to the dataframe
-      main_data_table$last_taxon = last_lineage$TaxaName
+      main_data_table$last_taxon <- last_lineage$TaxaName
       rownames(main_data_table) <- last_lineage$TaxaName
       #print(lineage_OTU)
       
       # Create a table containing only non-numeric data
-      sample_info_data = main_data_table[, colnames(main_data_table) %in% c("Consensus.Lineage",
+      sample_info_data <- main_data_table[, colnames(main_data_table) %in% c("Consensus.Lineage",
                                                                             "Feature.ID",
                                                                             "rowID",
                                                                             "ReprSequence",
@@ -1748,45 +1736,45 @@ server <- function(input, output, session) {
     })
     
     
-    srs_react = reactive({
+    srs_react <- reactive({
       ## Set an option to select SRS, rarefy, or none (default SRS)
-      main_data_table = pcoa_data_main_re()
-      meta_data_table = meta_datafile()
+      main_data_table <- pcoa_data_main_re()
+      meta_data_table <- meta_datafile()
       # Set the seed for reproducibility (optional)
-      srs_depth = input$pcoa_srs_depth
-      srs_table = main_data_table[, !colnames(main_data_table) %in% c("Consensus.Lineage",
+      srs_depth <- input$pcoa_srs_depth
+      srs_table <- main_data_table[, !colnames(main_data_table) %in% c("Consensus.Lineage",
                                                                       "Feature.ID",
                                                                       "rowID",
                                                                       "ReprSequence",
                                                                       "last_taxon")]
-      srs_table = SRS(srs_table, Cmin = srs_depth, seed = 123)
-      rownames(srs_table) = main_data_table$last_taxon
+      srs_table <- SRS(srs_table, Cmin = srs_depth, seed = 123)
+      rownames(srs_table) <- main_data_table$last_taxon
       srs_table
     })
     
-    srs_proportion_react = reactive({
-      srs_table = srs_react()
-      meta_data_table = meta_datafile()
+    srs_proportion_react <- reactive({
+      srs_table <- srs_react()
+      meta_data_table <- meta_datafile()
       
       # Create a proportion table
       proportion_table <- srs_table / colSums(srs_table)
       
       # # Combine the proportion table back with the non-numeric data
-      # proportion_table = cbind(proportion_table,sample_info_data)
+      # proportion_table <- cbind(proportion_table,sample_info_data)
       
       # Remove empty rows
       proportion_table <-
         proportion_table[rowSums(proportion_table) > 0,]
       
       # Transpose table
-      proportion_table = t(proportion_table)
+      proportion_table <- t(proportion_table)
       proportion_table
       
     })
     
-    bc_pcoa_react = reactive({
-      proportion_table = srs_proportion_react()
-      meta_data_table = meta_datafile()
+    bc_pcoa_react <- reactive({
+      proportion_table <- srs_proportion_react()
+      meta_data_table <- meta_datafile()
       
       # Generate Bray Curtis
       bray_curtis <-
@@ -1798,8 +1786,8 @@ server <- function(input, output, session) {
       
     })
     
-    pcoa_coords_react = reactive({
-      pcoa_result = bc_pcoa_react()
+    pcoa_coords_react <- reactive({
+      pcoa_result <- bc_pcoa_react()
       
       # Extract PCoA coordinates
       pcoa_coords <- pcoa_result$vectors[, 1:2]
@@ -1813,8 +1801,8 @@ server <- function(input, output, session) {
       pcoa_df
     })
     
-    pcoa_eigen_react = reactive({
-      pcoa_result = bc_pcoa_react()
+    pcoa_eigen_react <- reactive({
+      pcoa_result <- bc_pcoa_react()
       
       # Extract relative eigenvalues
       eigenvalues <- pcoa_result$values$Relative_eig
@@ -1826,10 +1814,10 @@ server <- function(input, output, session) {
       eigen_df
     })
     
-    pcoa_envfit_react = reactive({
-      pcoa_result = bc_pcoa_react()
-      meta_data_table = meta_datafile()
-      srs_table = srs_react()
+    pcoa_envfit_react <- reactive({
+      pcoa_result <- bc_pcoa_react()
+      meta_data_table <- meta_datafile()
+      srs_table <- srs_react()
       
       # Collect the column names after SRS rarefaction
       pcoa_filt_colnames <- colnames(srs_table)
@@ -1842,25 +1830,25 @@ server <- function(input, output, session) {
       ## Process for all the environment variables for triplot and separate the vectors and R2 ##
       # pcoa_test = cmdscale(pcoa_srs_diss, k=3, eig = TRUE)
       # This must be corrected so that any samples removed in the SRS correction are removed from the metadata table!
-      pcoa_envfit = envfit(pcoa_result$vectors, meta_data_table, perm = 10000)
+      pcoa_envfit <- envfit(pcoa_result$vectors, meta_data_table, perm = 10000)
       
       ## Scales the arrow vectors so they aren't huge
-      pcoa_envfit_df = as.data.frame(pcoa_envfit$vectors$arrows * sqrt(pcoa_envfit$vectors$r))
-      pcoa_envfit_df = cbind(pcoa_envfit_df, pcoa_envfit$vectors$r)
-      pcoa_envfit_df = cbind(pcoa_envfit_df, pcoa_envfit$vectors$pvals)
-      colnames(pcoa_envfit_df) = c("axis1", "axis2", "R", "pvalue")
+      pcoa_envfit_df <- as.data.frame(pcoa_envfit$vectors$arrows * sqrt(pcoa_envfit$vectors$r))
+      pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$r)
+      pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$pvals)
+      colnames(pcoa_envfit_df) <- c("axis1", "axis2", "R", "pvalue")
       
       # # Filter below a specified threshold (p-value?). Need to look more into what these axis values represent.
       # pcoa_envfit_df = filter(pcoa_envfit_df, pcoa_envfit_df$R < 0.5)
-      pcoa_envfit_df_filt = filter(pcoa_envfit_df,
+      pcoa_envfit_df_filt <- filter(pcoa_envfit_df,
                                    pcoa_envfit_df$pvalue < input$pcoa_env_thresh)
       pcoa_envfit_df_filt
       
     })
     
-    pcoa_plot_taxa_fit_react = reactive({
-      pcoa_srs = srs_proportion_react()
-      pcoa_srs_plot = bc_pcoa_react()
+    pcoa_plot_taxa_fit_react <- reactive({
+      pcoa_srs <- srs_proportion_react()
+      pcoa_srs_plot <- bc_pcoa_react()
       
       # Generate the weighted average scores
       taxon_weighted_scores <-
@@ -1896,16 +1884,16 @@ server <- function(input, output, session) {
       
     })
     
-    pcoa_plot_react = reactive({
+    pcoa_plot_react <- reactive({
       ## I need to modify this so if the dataframe is empty it doesn't include the environmental fit data
-      pcoa_df = pcoa_coords_react()
-      meta_data_table = meta_datafile()
-      pcoa_envfit_df_filt = pcoa_envfit_react()
-      eigen_df = pcoa_eigen_react()
-      taxon_weighted_scores = pcoa_plot_taxa_fit_react()
+      pcoa_df <- pcoa_coords_react()
+      meta_data_table <- meta_datafile()
+      pcoa_envfit_df_filt <- pcoa_envfit_react()
+      eigen_df <- pcoa_eigen_react()
+      taxon_weighted_scores <- pcoa_plot_taxa_fit_react()
       
       # Insert a column of the sample names
-      pcoa_df$SampleName = rownames(pcoa_df)
+      pcoa_df$SampleName <- rownames(pcoa_df)
       # Merge metadata with PCoA dataframe based on row names
       merged_df <-
         left_join(pcoa_df, meta_data_table, by = "SampleName")
@@ -1919,7 +1907,7 @@ server <- function(input, output, session) {
       available_fill <- 2:27
       
       # Plot PCoA using ggplot2 with shape and color based on metadata
-      pcoa_plot = ggplot(merged_df, aes(x = PCoA1, y = PCoA2)) +
+      pcoa_plot <- ggplot(merged_df, aes(x = PCoA1, y = PCoA2)) +
         # geom_point(size = 4, aes(shape = eval(parse(text = )), fill = get(input$pcoa_fill_col))) +
         
         geom_point(size = 4, aes(
@@ -1960,7 +1948,7 @@ server <- function(input, output, session) {
       
       if (dim(pcoa_envfit_df_filt)[1] != 0) {
         ## Add triplot info and labels: ## Add if statement here
-        pcoa_plot = pcoa_plot + geom_segment(
+        pcoa_plot <- pcoa_plot + geom_segment(
           data = pcoa_envfit_df_filt,
           aes(
             x = 0,
@@ -2009,7 +1997,7 @@ server <- function(input, output, session) {
       
       if (dim(taxon_weighted_scores)[1] != 0) {
         # Add taxon annotation
-        pcoa_plot = pcoa_plot + geom_text(
+        pcoa_plot <- pcoa_plot + geom_text(
           data = taxon_weighted_scores,
           aes(Axis1, Axis2, label = rownames(taxon_weighted_scores)),
           inherit.aes = FALSE,
@@ -2058,41 +2046,40 @@ server <- function(input, output, session) {
     
     ## Adjusting the PCoA image and saving
     ## You must define the input for width/height within a reactive context, then call it in the output.
-    pcoa_plot_width = reactive(input$pcoa_plot_outw)
-    pcoa_plot_height = reactive(input$pcoa_plot_outh)
+    pcoa_plot_width <- reactive(input$pcoa_plot_outw)
+    pcoa_plot_height <- reactive(input$pcoa_plot_outh)
     
-    output$pcoa_plot_out = renderPlot({
-      pcoa_plot = pcoa_plot_react()
+    output$pcoa_plot_out <- renderPlot({
+      pcoa_plot <- pcoa_plot_react()
       pcoa_plot
     },
     width = pcoa_plot_width,
     height = pcoa_plot_height)
     
-  })
-  
-  output$pcoa_download = downloadHandler(
+  output$pcoa_download <- downloadHandler(
     filename = "pcoa_plot.pdf",
     contentType = ".pdf",
     content = function(pcoa_file) {
       ggsave(
         pcoa_file,
-        plot = pcoa_plot_re(),
+        plot = pcoa_plot_react(),
         device = "pdf",
-        height = as.numeric(input$pcoa_plot_outh),
-        width = as.numeric(input$pcoa_plot_outw),
+        height = as.numeric(input$b1_plot_out_h),
+        width = as.numeric(input$b1_plot_out_w),
         units = "px",
         scale = 4
       )
     }
   )
   
+  
   #### Ranked abundance plot ####
   # For this plot, I think I need to generate all of the data again, including the taxonomy labels. I think I can use the prop table or filtered table from previously
   
-  ranked_abundance_table_re = reactive({
-    meta_data_table = meta_datafile()
-    unfiltered_table = data_unfiltered_table()
-    filtered_table = data_filtered_table()
+  ranked_abundance_table_re <- reactive({
+    meta_data_table <- meta_datafile()
+    unfiltered_table <- data_unfiltered_table()
+    filtered_table <- data_filtered_table()
     
     
     # # ## This removes samples from the ASV tables that don't have a corresponding metadata row: THIS IS WORKING
