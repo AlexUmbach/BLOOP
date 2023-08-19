@@ -122,7 +122,7 @@ ui <- navbarPage(id = "navbarID",
         
                                  ")),
         
-        title = "BLOOP v2.4",
+        title = "AOViz v2.4",
         
         #title = img(src="ALEXIOME_logo.png", height = "100%", width = "100%"),
         
