@@ -121,7 +121,27 @@ server <- function(input, output, session) {
         sep = "\t"
       )
     })
+  
     
+    ## Filter the ASV table based on the present samples in the metadata table
+    main_datafile <- reactive({
+      req(input$main_file)
+      main_data_table <- main_datafile_og()
+      meta_data_table <- meta_datafile()
+      meta_names <-
+        c(
+          meta_data_table$SampleName,
+          "Consensus.Lineage",
+          "rowID",
+          "Feature.ID",
+          "ReprSequence"
+        )
+      main_data_table <-
+        main_data_table[, names(main_data_table) %in% meta_names]
+      main_data_table
+    })
+    
+    ## Filter the metadata table based on present samples in ASV table
     meta_datafile <- reactive({
       meta_data_table <- meta_datafile_og()
       main_data_table <- main_datafile_og()
@@ -143,23 +163,6 @@ server <- function(input, output, session) {
       meta_data_table
     })
     
-    ## Final sample filtering from main table
-    main_datafile <- reactive({
-      req(input$main_file)
-      main_data_table <- main_datafile_og()
-      meta_data_table <- meta_datafile()
-      meta_names <-
-        c(
-          meta_data_table$SampleName,
-          "Consensus.Lineage",
-          "rowID",
-          "Feature.ID",
-          "ReprSequence"
-        )
-      main_data_table <-
-        main_data_table[, names(main_data_table) %in% meta_names]
-      main_data_table
-    })
     
     ## ASV contaminant table
     output$contam_table <- renderDataTable({
@@ -1826,6 +1829,10 @@ server <- function(input, output, session) {
       meta_data_table <-
         meta_data_table %>% filter(SampleName %in% pcoa_filt_colnames)
       meta_data_table
+      
+      # Filter the main table
+      
+      
 
       ## Process for all the environment variables for triplot and separate the vectors and R2 ##
       # pcoa_test = cmdscale(pcoa_srs_diss, k=3, eig = TRUE)
@@ -1906,10 +1913,13 @@ server <- function(input, output, session) {
       available_colors <- 2:27
       available_fill <- 2:27
       
+      
+      
+      if (input$shape_choice == "Yes"){
       # Plot PCoA using ggplot2 with shape and color based on metadata
       pcoa_plot <- ggplot(merged_df, aes(x = PCoA1, y = PCoA2)) +
         # geom_point(size = 4, aes(shape = eval(parse(text = )), fill = get(input$pcoa_fill_col))) +
-        
+      
         geom_point(size = 4, aes(
           # shape = eval(parse(text = paste("merged_df$",input$pcoa_shape))),
           # colour = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))),
@@ -1943,6 +1953,42 @@ server <- function(input, output, session) {
         scale_fill_manual(values = available_fill) +
         scale_colour_manual(values = available_fill)
       # scale_colour_manual(values = available_colors, name = "colour", guide = "none")
+        }
+      
+      if (input$shape_choice == "No"){
+        pcoa_plot <- ggplot(merged_df, aes(x = PCoA1, y = PCoA2)) +
+          # geom_point(size = 4, aes(shape = eval(parse(text = )), fill = get(input$pcoa_fill_col))) +
+              geom_point(size = 4, aes(
+              # shape = eval(parse(text = paste("merged_df$",input$pcoa_shape))),
+              # colour = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))),
+              # fill = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))))) +
+              colour = get(input$pcoa_fill_col),
+              fill = get(input$pcoa_fill_col)
+            )) +
+              # (eval(parse(text=paste("data_long_bubble$",input$b1_meta_group)))))
+              # geom_point(size = 4, aes(shape = get(input$pcoa_shape), fill = get(input$pcoa_fill_col))) +
+              labs(
+                x = paste(
+                  "Axis1 variance (",
+                  round(eigen_df$Axis1, 1),
+                  "%",
+                  ")",
+                  sep = ""
+                ),
+                y = paste(
+                  "Axis2 variance (",
+                  round(eigen_df$Axis2, 1),
+                  "%",
+                  ")",
+                  sep = ""
+                )
+              ) +
+              # scale_shape_manual(values = available_shapes, name = paste("Data",eval(parse(text = input$pcoa_shape)),sep = "")) +
+              # scale_fill_manual(values = available_fill, name =  paste("Data2",eval(parse(text = input$pcoa_fill_col)),sep = "")) +
+              # scale_color_manual(values = available_colors, name = "colour", guide = "none")
+              scale_fill_manual(values = available_fill) +
+              scale_colour_manual(values = available_fill)
+      }
       
       
       
@@ -2064,8 +2110,8 @@ server <- function(input, output, session) {
         pcoa_file,
         plot = pcoa_plot_react(),
         device = "pdf",
-        height = as.numeric(input$b1_plot_out_h),
-        width = as.numeric(input$b1_plot_out_w),
+        height = as.numeric(input$pcoa_plot_outh),
+        width = as.numeric(input$pcoa_plot_outw),
         units = "px",
         scale = 4
       )

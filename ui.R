@@ -419,6 +419,7 @@ ui <- navbarPage(id = "navbarID",
                                 numericInput("pcoa_srs_depth","Select your SRS depth",min = 0, value = 1000),
                                 numericInput("pcoa_env_thresh", "Select your p-value threshold (0 - 1)", min = 0, max = 1, value = 0.5),
                                 numericInput("pcoa_taxa_thresh", "Select your taxon abundance (0 - 100)", min = 0, max = 100, value = 5),
+                                radioButtons("shape_choice","Do you want to add a shape variable?",choices = c("Yes","No"), inline = TRUE),
                                 selectInput("pcoa_fill_col","Select your fill colour",choices = "Updating"),
                                 selectInput("pcoa_shape","Select your shape",choices = "Updating"),
                                 #selectInput("pcoa_elips_col","Select your elipsis color",choices = "Updating"),
@@ -438,8 +439,8 @@ ui <- navbarPage(id = "navbarID",
                                # ),
                                box(
                                  
-                                 sliderInput("pcoa_plot_outw","Plot width",min = 0, max = 2000,step = 100,value = 1000),
-                                 sliderInput("pcoa_plot_outh","Plot height",min = 0, max = 2000,step = 100,value = 600),
+                                 sliderInput("pcoa_plot_outw","Plot width",min = 0, max = 3000,step = 100,value = 1000),
+                                 sliderInput("pcoa_plot_outh","Plot height",min = 0, max = 3000,step = 100,value = 600),
                                  downloadButton("pcoa_download","Save figure"),
                                  width = 3
                                )
