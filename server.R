@@ -13,6 +13,7 @@ server <- function(input, output, session) {
   output$pcoa_table_out <- renderDT(NULL)
   output$ranked_table_out <- renderDT(NULL)
   output$ranked_plot_out <- renderDT(NULL)
+  output$uni_pcoa_plot_out <- renderDT(NULL)
   
   ## These monitor the status of the various start buttons on each tab
   read_start_pressed <- reactiveVal(FALSE)
@@ -55,11 +56,11 @@ server <- function(input, output, session) {
     updateSelectInput(session, "b1_second_facet_meta", choices = meta_colnames)
     updateSelectInput(session, "b1_sort_axis", choices = meta_colnames)
 
-    ## Update selection - PCoA plot
+    ## Update selection - Bray-Curtis PCoA plot
     updateSelectInput(session, "pcoa_fill_col", choices = meta_colnames)
     updateSelectInput(session, "pcoa_elips_col", choices = meta_colnames)
     updateSelectInput(session, "pcoa_shape", choices = meta_colnames)
-
+    
     ## Update selection - Ranked
     updateSelectInput(session, "ranked_sort_param", choices = meta_colnames)
     updateSelectInput(session, "ranked_color_param", choices = meta_colnames)
@@ -69,7 +70,23 @@ server <- function(input, output, session) {
     updateTabItems(session, "ranked_meta_keyword")
     updateSelectInput(session, "ranked_second_facet_meta", choices = meta_colnames)
     updateSelectInput(session, "ranked_sort_axis", choices = meta_colnames)
+    
+    
   })
+  
+  ## Update selection - UniFrac PCoA plot
+  observe({
+    req(input$uni_meta_file)
+    
+    meta_datafile <- uni_meta_datafile_og()
+    meta_colnames <- c(colnames(meta_datafile), "TaxaName")
+    meta_colnames <- meta_colnames[meta_colnames != "SampleName"]
+    
+    updateSelectInput(session, "uni_pcoa_fill_col", choices = meta_colnames)
+    updateSelectInput(session, "uni_pcoa_elips_col", choices = meta_colnames)
+    updateSelectInput(session, "uni_pcoa_shape", choices = meta_colnames)
+  })
+  
   
   
   ####  Upload tab ####
@@ -1865,9 +1882,9 @@ server <- function(input, output, session) {
       
       # Calculate normalized, total abundance of each taxa
       taxa_total_abundance <-
-        sum(pcoa_srs) #total number of AA asvs in the table
+        sum(pcoa_srs) #total number of asvs in the table
       taxa_count <-
-        apply(pcoa_srs, 2, sum) #total number of each amoA AA asv across all samples
+        apply(pcoa_srs, 2, sum) #total number of each asv across all samples
       normalized_taxa_count <-
         as.data.frame(taxa_count / taxa_total_abundance)
       colnames(normalized_taxa_count) <- "abundance"
@@ -2117,6 +2134,454 @@ server <- function(input, output, session) {
       )
     }
   )
+  
+  
+  
+  
+  
+  #### Unifrac PCoA Triplot ####
+  
+  # Right now, this is limited to using the distance matrix output from QIIME2, which means the uses must calculate run diversity-core-phylogentetics
+  # and then export the distance matrix. It also cannot include taxonomy because of the nature of the files in the QIIME2 environment. We'll see if this can be
+  # fixed in the future. Perhaps a workaround. 
+  
+  
+
+  ## We start with an input upload of the distance matrix and the metadata. It is best to keep this separate from the metadata table used throughout BLOOP
+  ## Main ASV table
+  # output$main_table <- renderDataTable({
+  #   req(input$unifrac_file)
+  #   read.table(
+  #     file = input$unifrac_file$datapath,
+  #     fill = TRUE,
+  #     header = TRUE,
+  #     sep = "\t"
+  #   )
+  # })
+  
+  unifrac_datafile_upload <- reactive({
+    req(input$unifrac_file)
+    read.table(
+      file = input$unifrac_file$datapath,
+      fill = TRUE,
+      header = TRUE,
+      sep = "\t"
+    )
+  })
+  
+  # main_datafile_og <- reactive({
+  #   main_datafile = main_datafile_upload()
+  #   main_datafile[is.na(main_datafile)] <- 0
+  #   main_datafile
+  # })
+  
+  ## Metadata table
+  uni_meta_datafile_og <- reactive({
+    req(input$uni_meta_file)
+    read.table(
+      file = input$uni_meta_file$datapath,
+      fill = TRUE,
+      header = TRUE,
+      sep = "\t"
+    )
+  })
+  
+  
+
+  
+  
+#  observeEvent(input$uni_pcoa_start, {
+  unifrac_distance_re <- reactive({
+    main_data_table <- unifrac_datafile_upload()
+    meta_data_table <- uni_meta_datafile_og()
+    
+    names(main_data_table)[1] = "SampleName"
+    rownames(main_data_table) = main_data_table$SampleName
+    meta_names <-
+      c(
+        meta_data_table$SampleName,
+        "Consensus.Lineage",
+        "rowID",
+        "Feature.ID",
+        "ReprSequence"
+      )
+    
+    
+    ## Remove columns and rows of samples not present in metadata -- when there is more data than metadata
+    main_data_table = main_data_table[,names(main_data_table) %in% meta_names]
+    main_data_table = main_data_table %>% filter(rownames(main_data_table) %in% meta_names)
+    main_data_table
+  })
+  
+  uni_meta_datafile_re <- reactive({
+    meta_data_table <- uni_meta_datafile_og()
+    main_data_table <- unifrac_distance_re()
+    
+    ## Filter for samples only present in the metadata file:
+    main_colnames = colnames(main_data_table)
+    main_rownames = rownames(main_data_table)
+    meta_names = meta_data_table$SampleName
+    
+    ## Remove metadata when there is more metadata than data:
+    meta_data_table = meta_data_table %>% filter(SampleName %in% main_colnames)
+    meta_data_table
+  })
+  
+  
+  uni_pcoa_react <- reactive({
+    pcoa_srs_diss <- unifrac_distance_re()
+    ##Generate the PCOA plot using the APE package
+    pcoa_result <- ape::pcoa(pcoa_srs_diss, correction = "cailliez", )
+    pcoa_result
+    
+  })
+  
+  uni_pcoa_coords_react <- reactive({
+    pcoa_result <- uni_pcoa_react()
+    
+    # Extract PCoA coordinates
+    pcoa_coords <- pcoa_result$vectors[, 1:2]
+    # Create a dataframe with PCoA coordinates and row names
+    pcoa_df <-
+      data.frame(
+        PCoA1 = pcoa_coords[, 1],
+        PCoA2 = pcoa_coords[, 2],
+        row.names = row.names(pcoa_coords)
+      )
+    pcoa_df
+  })
+  
+  uni_pcoa_eigen_react <- reactive({
+    pcoa_result <- uni_pcoa_react()
+    
+    # Extract relative eigenvalues
+    eigenvalues <- pcoa_result$values$Rel_corr_eig
+    
+    # Extract the first two eigenvalues
+    Axis1 <- eigenvalues[1] * 100
+    Axis2 <- eigenvalues[2] * 100
+    eigen_df <- data.frame(Axis1 = Axis1, Axis2 = Axis2)
+    eigen_df
+  })
+  
+  uni_pcoa_envfit_react <- reactive({
+    pcoa_result <- uni_pcoa_react()
+    meta_data_table <- uni_meta_datafile_re()
+
+        ## Process for all the environment variables for triplot and separate the vectors and R2 ##
+    # pcoa_test = cmdscale(pcoa_srs_diss, k=3, eig = TRUE)
+    # This must be corrected so that any samples removed in the SRS correction are removed from the metadata table!
+    pcoa_envfit <- envfit(pcoa_result$vectors, meta_data_table, perm = 10000)
+    
+    ## Scales the arrow vectors so they aren't huge
+    pcoa_envfit_df <- as.data.frame(pcoa_envfit$vectors$arrows * sqrt(pcoa_envfit$vectors$r))
+    pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$r)
+    pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$pvals)
+    colnames(pcoa_envfit_df) <- c("axis1", "axis2", "R", "pvalue")
+    
+    # # Filter below a specified threshold (p-value?). Need to look more into what these axis values represent.
+    # pcoa_envfit_df = filter(pcoa_envfit_df, pcoa_envfit_df$R < 0.5)
+    pcoa_envfit_df_filt <- filter(pcoa_envfit_df,
+                                  pcoa_envfit_df$pvalue < input$uni_env_thresh)
+    pcoa_envfit_df_filt
+    
+  })
+  
+  # pcoa_plot_taxa_fit_react <- reactive({
+  #   pcoa_srs <- srs_proportion_react()
+  #   pcoa_srs_plot <- bc_pcoa_react()
+  #   
+  #   # Generate the weighted average scores
+  #   taxon_weighted_scores <-
+  #     wascores(pcoa_srs_plot$vectors[, 1:3], pcoa_srs)
+  #   
+  #   taxon_weighted_scores[is.na(taxon_weighted_scores)] <- 0 # remove NA values
+  #   
+  #   # Calculate normalized, total abundance of each taxa
+  #   taxa_total_abundance <-
+  #     sum(pcoa_srs) #total number of asvs in the table
+  #   taxa_count <-
+  #     apply(pcoa_srs, 2, sum) #total number of each asv across all samples
+  #   normalized_taxa_count <-
+  #     as.data.frame(taxa_count / taxa_total_abundance)
+  #   colnames(normalized_taxa_count) <- "abundance"
+  #   
+  #   taxon_weighted_scores <-
+  #     as.data.frame(cbind(
+  #       taxon_weighted_scores,
+  #       normalized_taxa_count$abundance
+  #     )) #Append the abundance information
+  #   colnames(taxon_weighted_scores) <-
+  #     c("Axis1", "Axis2", "Axis3", "Abundance") # Change column names
+  #   # taxon_weighted_scores$abundance <- normalized_taxa_count # Append the counts to the weighted average scores
+  #   # taxon_weighted_scores <- subset(taxon_weighted_scores, taxon_weighted_scores$Abundance %in% taxon_weighted_scores$Abundance[taxon_weighted_scores$Abundance > abund_thresh])
+  #   taxon_weighted_scores <-
+  #     filter(
+  #       taxon_weighted_scores,
+  #       taxon_weighted_scores$Abundance > input$pcoa_taxa_thresh / 100
+  #     ) # Filter taxonomy abundance based on a threshold
+  #   taxon_weighted_scores
+  #   
+  #   
+  # })
+  
+ observeEvent(input$uni_pcoa_start, {
+  uni_pcoa_plot_react <- reactive({
+    ## I need to modify this so if the dataframe is empty it doesn't include the environmental fit data
+    
+    pcoa_df <- uni_pcoa_coords_react()
+    meta_data_table <- uni_meta_datafile_re()
+    pcoa_envfit_df_filt <- uni_pcoa_envfit_react()
+    eigen_df <- uni_pcoa_eigen_react()
+    # taxon_weighted_scores <- pcoa_plot_taxa_fit_react()
+    
+    # Insert a column of the sample names
+    pcoa_df$SampleName <- rownames(pcoa_df)
+    # Merge metadata with PCoA dataframe based on row names
+    merged_df <-
+      left_join(pcoa_df, meta_data_table, by = "SampleName")
+    # Change all metadata into categorical data
+    merged_df <-
+      merged_df %>% mutate_if(!names(.) %in% c("PCoA1", "PCoA2"), factor)
+    
+    # Define the available shapes and colors
+    available_shapes <- c(21, 22, 23, 24, 14, 13:1)
+    available_colors <- 2:27
+    available_fill <- 2:27
+    
+    
+    
+    if (input$uni_shape_choice == "Yes"){
+      # Plot PCoA using ggplot2 with shape and color based on metadata
+      pcoa_plot <- ggplot(merged_df, aes(x = PCoA1, y = PCoA2)) +
+        # geom_point(size = 4, aes(shape = eval(parse(text = )), fill = get(input$pcoa_fill_col))) +
+        
+        geom_point(size = 4, aes(
+          # shape = eval(parse(text = paste("merged_df$",input$pcoa_shape))),
+          # colour = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))),
+          # fill = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))))) +
+          shape = get(input$uni_pcoa_shape),
+          colour = get(input$uni_pcoa_fill_col),
+          fill = get(input$uni_pcoa_fill_col)
+        )) +
+        # (eval(parse(text=paste("data_long_bubble$",input$b1_meta_group)))))
+        # geom_point(size = 4, aes(shape = get(input$pcoa_shape), fill = get(input$pcoa_fill_col))) +
+        labs(
+          x = paste(
+            "Axis1 variance (",
+            round(eigen_df$Axis1, 1),
+            "%",
+            ")",
+            sep = ""
+          ),
+          y = paste(
+            "Axis2 variance (",
+            round(eigen_df$Axis2, 1),
+            "%",
+            ")",
+            sep = ""
+          )
+        ) +
+        # scale_shape_manual(values = available_shapes, name = paste("Data",eval(parse(text = input$pcoa_shape)),sep = "")) +
+        # scale_fill_manual(values = available_fill, name =  paste("Data2",eval(parse(text = input$pcoa_fill_col)),sep = "")) +
+        # scale_color_manual(values = available_colors, name = "colour", guide = "none")
+        scale_shape_manual(values = available_shapes) +
+        scale_fill_manual(values = available_fill) +
+        scale_colour_manual(values = available_fill)
+      # scale_colour_manual(values = available_colors, name = "colour", guide = "none")
+    }
+    
+    if (input$uni_shape_choice == "No"){
+      pcoa_plot <- ggplot(merged_df, aes(x = PCoA1, y = PCoA2)) +
+        # geom_point(size = 4, aes(shape = eval(parse(text = )), fill = get(input$pcoa_fill_col))) +
+        geom_point(size = 4, aes(
+          # shape = eval(parse(text = paste("merged_df$",input$pcoa_shape))),
+          # colour = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))),
+          # fill = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))))) +
+          colour = get(input$uni_pcoa_fill_col),
+          fill = get(input$uni_pcoa_fill_col)
+        )) +
+        # (eval(parse(text=paste("data_long_bubble$",input$b1_meta_group)))))
+        # geom_point(size = 4, aes(shape = get(input$pcoa_shape), fill = get(input$pcoa_fill_col))) +
+        labs(
+          x = paste(
+            "Axis1 variance (",
+            round(eigen_df$Axis1, 1),
+            "%",
+            ")",
+            sep = ""
+          ),
+          y = paste(
+            "Axis2 variance (",
+            round(eigen_df$Axis2, 1),
+            "%",
+            ")",
+            sep = ""
+          )
+        ) +
+        # scale_shape_manual(values = available_shapes, name = paste("Data",eval(parse(text = input$pcoa_shape)),sep = "")) +
+        # scale_fill_manual(values = available_fill, name =  paste("Data2",eval(parse(text = input$pcoa_fill_col)),sep = "")) +
+        # scale_color_manual(values = available_colors, name = "colour", guide = "none")
+        scale_fill_manual(values = available_fill) +
+        scale_colour_manual(values = available_fill)
+    }
+    
+    
+    
+    if (dim(pcoa_envfit_df_filt)[1] != 0) {
+      ## Add triplot info and labels: ## Add if statement here
+      pcoa_plot <- pcoa_plot + geom_segment(
+        data = pcoa_envfit_df_filt,
+        aes(
+          x = 0,
+          y = 0,
+          xend = pcoa_envfit_df_filt$axis1,
+          yend = pcoa_envfit_df_filt$axis2,
+        ),
+        show.legend = FALSE,
+        arrow = arrow(ends = "last")
+      ) +
+        geom_label(
+          data = pcoa_envfit_df_filt,
+          aes(
+            label = rownames(pcoa_envfit_df_filt),
+            x = pcoa_envfit_df_filt$axis1 / 2,
+            y = pcoa_envfit_df_filt$axis2 / 2
+          ),
+          size = 4
+        )
+    }
+    
+    # Do you want to include an ellipsis around your data points?:
+    if (input$uni_pcoa_elips == "Yes") {
+      pcoa_plot <-
+        pcoa_plot + stat_ellipse(aes(color = get(input$uni_pcoa_fill_col)),
+                                 show.legend = FALSE)
+    }
+    
+    
+    
+    # # Taxon points
+    # 
+    # if (dim(taxon_weighted_scores)[1] != 0) {
+    #   pcoa_plot = pcoa_plot + geom_point(
+    #     data = taxon_weighted_scores,
+    #     aes(Axis1, Axis2, size = round(Abundance *
+    #                                      100, digits = 0)),
+    #     inherit.aes = FALSE,
+    #     shape = 21,
+    #     fill = NA,
+    #     colour = "black",
+    #     show.legend = TRUE
+    #   ) +
+    #     labs(size = "Abundance")
+    # }
+    # 
+    # if (dim(taxon_weighted_scores)[1] != 0) {
+    #   # Add taxon annotation
+    #   pcoa_plot <- pcoa_plot + geom_text(
+    #     data = taxon_weighted_scores,
+    #     aes(Axis1, Axis2, label = rownames(taxon_weighted_scores)),
+    #     inherit.aes = FALSE,
+    #     size = 4
+    #   )
+    # }
+    # 
+    
+    
+    # Customize plot aesthetics
+    pcoa_plot <- pcoa_plot +
+      theme(
+        panel.grid = element_blank(),
+        text = element_text(colour = "black"),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black", size = 12),
+        axis.text.x = element_text(
+          angle = 90,
+          hjust = 1,
+          vjust = 0.5,
+          size = 14,
+          face = "plain"
+        ),
+        axis.text.y.left = element_text(size = 14, face = "plain"),
+        legend.text = element_text(face = "italic", size = 16),
+        legend.title = element_text(size = 16),
+        axis.title = element_text(size = 16, face = NULL),
+        axis.text.y = element_text(size = 14),
+        strip.text.x = element_text(size = 10, face = "bold"),
+        panel.spacing = unit(0, "lines"),
+        panel.border = element_rect(
+          colour = "black",
+          size = 1,
+          fill = NA
+        ),
+        axis.ticks = element_line(colour = "black"),
+        axis.ticks.y = element_line(colour = "black"),
+        axis.line.y = element_line(colour = "black")
+      )
+    
+    # Plot PCoA
+    pcoa_plot
+  })
+  
+
+  
+  
+  
+  ## Adjusting the PCoA image and saving
+  ## You must define the input for width/height within a reactive context, then call it in the output.
+  uni_pcoa_plot_width <- reactive(input$uni_pcoa_plot_outw)
+  uni_pcoa_plot_height <- reactive(input$uni_pcoa_plot_outh)
+  
+  output$uni_pcoa_plot_out <- renderPlot({
+    pcoa_plot <- uni_pcoa_plot_react()
+    pcoa_plot
+  },
+  width = uni_pcoa_plot_width,
+  height = uni_pcoa_plot_height)
+  
+ })
+  
+  output$uni_pcoa_download <- downloadHandler(
+    filename = "uni_pcoa_plot.pdf",
+    contentType = ".pdf",
+    content = function(pcoa_file) {
+      ggsave(
+        pcoa_file,
+        plot = uni_pcoa_plot_react(),
+        device = "pdf",
+        height = as.numeric(input$uni_pcoa_plot_outh),
+        width = as.numeric(input$uni_pcoa_plot_outw),
+        units = "px",
+        scale = 4
+      )
+    }
+  )
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   #### Ranked abundance plot ####

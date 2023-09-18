@@ -22,6 +22,7 @@ library(fresh)
 library(htmltools)
 library(tidytext)
 library(ggh4x)
+library(msa)
 
 ## Set working directory. This should be the directory where app.R is stored. 
 #setwd("C:/Users/alexu/OneDrive/UW/Grad Studies/R workspace/R Scripts//ALEXIOME/ALEXIOME/")
@@ -448,6 +449,46 @@ ui <- navbarPage(id = "navbarID",
                              br(),
                              br(),
                              plotOutput("pcoa_plot_out") %>% withSpinner(type = 1,color.background = "white"),
+                             style = "overflow-y:scroll; max-height: 850px; position:relative;"
+                             
+                   )
+                 )
+        ),
+        
+        #### UniFrac Plot ####
+        tabPanel("Upload UniFrac data",
+                 sidebarLayout(
+                   sidebarPanel(h5("Please upload your data"),
+                                fileInput("unifrac_file","Primary ASV table"),
+                                fileInput("uni_meta_file","Metadata table"),
+                                selectInput("uni_pcoa_fill_col",label = "Select your fill colour", choices = "Updating"),
+                                radioButtons("uni_shape_choice",label = "Do you want to differentiate by shape as well?",choices = c("Yes","No")),
+                                selectInput("uni_pcoa_shape", label = "Select your shape", choice = "Updating"),
+                                radioButtons("uni_pcoa_elips",label = "Do you want statistically generated elipses?",choices = c("Yes","No")),
+                                numericInput("uni_env_thresh", label = "Select your p-value threshold (0 to 1)",value = 0.5, min = 0, max = 1),
+                                width = 3,
+                                style = "overflow-y:scroll; max-height: 850px; position:relative; border-color:#000000"
+                   ),
+                   mainPanel(width = 9,
+                             "Uni PCoA",
+                             fluidRow(
+                               #   box(
+                               #   textInput("pcoa_plot_width","Plot width",value = 12),
+                               #   textInput("pcoa_plot_height", "Plot height", value = 8),
+                               #   width = 3
+                               # ),
+                               box(
+                                 
+                                 sliderInput("uni_pcoa_plot_outw","Plot width",min = 0, max = 3000,step = 100,value = 1000),
+                                 sliderInput("uni_pcoa_plot_outh","Plot height",min = 0, max = 3000,step = 100,value = 600),
+                                 actionButton("uni_pcoa_start","START"),
+                                 downloadButton("uni_pcoa_download","Save figure"),
+                                 width = 3
+                               )
+                             ),
+                             br(),
+                             br(),
+                             plotOutput("uni_pcoa_plot_out") %>% withSpinner(type = 1,color.background = "white"),
                              style = "overflow-y:scroll; max-height: 850px; position:relative;"
                              
                    )
