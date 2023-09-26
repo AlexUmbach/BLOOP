@@ -22,7 +22,9 @@ library(fresh)
 library(htmltools)
 library(tidytext)
 library(ggh4x)
-library(msa)
+# library(msa); removed because no reason to exist right now
+library(shinyjs)
+
 
 ## Set working directory. This should be the directory where app.R is stored. 
 #setwd("C:/Users/alexu/OneDrive/UW/Grad Studies/R workspace/R Scripts//ALEXIOME/ALEXIOME/")
@@ -364,13 +366,25 @@ ui <- navbarPage(id = "navbarID",
                                 actionButton("bubble_start",label = "Start!"),
                                 radioButtons("b1_new_old","Do you want the 'old' or 'new' bubbleplot?", c("New","Old"), selected = "New", inline = TRUE),
                                 textInput("b1_ab_thresh","Relative abundace threshold (%)", value = 20),
-                                radioButtons("b1_incl_percent","Do you want to include percenta abundance numbers?",c("Yes","No"), selected = "Yes", inline = TRUE),
+                                radioButtons("b1_incl_percent","Do you want to include percent abundance numbers?",c("Yes","No"), selected = "Yes", inline = TRUE),
                                 sliderInput("b1_num_dec","Set the number of decimals (0 to 5)",min = 0, max = 5, value = 0, step = 1, ticks = FALSE),
-                                selectInput("b1_sort_axis","How do you want to order your samples?",choices = "Updating"),
-                                selectInput("b1_sort_param","How do you want to group your samples (facet)?",choices = "Updating"),
-                                radioButtons("b1_second_facet","Do you want to group by a second category?",choices = c("Yes","No"), selected = "No", inline = TRUE),
-                                selectInput("b1_second_facet_meta","Choose the second ordering",choices = "Updating"),
+                                selectInput("b1_sort_axis","How do you want to order your individual samples?",choices = "Updating"),
+                                selectInput("b1_sort_param","How do you want to group samples (i.e., faceting)?", choices = "Updating"),
                                 selectInput("b1_color_param","How do you want to colour your bubbles?", choices = "Updating"),
+                                checkboxInput("b1_second_facet", "Do you want a second facet?", FALSE),
+                                #radioButtons("b1_second_facet","Do you want to group by a second category?",choices = c("Yes","No"), selected = "No", inline = TRUE),
+                                
+                                conditionalPanel(
+                                  condition = "input.b1_second_facet == true",
+                                selectInput("b1_second_facet_meta","Choose the second ordering",choices = "Updating"),
+                                checkboxInput("b1_third_facet", "Do you want a third facet?", FALSE),
+                                ),
+                                
+                                conditionalPanel(
+                                  condition = "input.b1_third_facet == true",
+                                  selectInput("b1_third_facet_meta","Choose the third ordering",choices = "Updating"),
+                                ),
+                                
                                 radioButtons("b1_confirm_sort","Do you want to sort the y-axis by taxonomic classification?",c("Yes","No"), selected = "Yes", inline = TRUE),
                                 selectInput("b1_tax_sort","By what taxonomic level will the y-axis be sorted?",c("Phylum","Class","Order","Family","Genus","Species")),
                                 textInput("b1_tax_keyword","Filter for specific taxa (e.g., 'staph')"),

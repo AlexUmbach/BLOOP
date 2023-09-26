@@ -54,7 +54,9 @@ server <- function(input, output, session) {
     updateTextInput(session, "b1_bubble_height")
     updateTabItems(session, "b1_meta_keyword")
     updateSelectInput(session, "b1_second_facet_meta", choices = meta_colnames)
+    updateSelectInput(session, "b1_third_facet_meta", choices = meta_colnames)
     updateSelectInput(session, "b1_sort_axis", choices = meta_colnames)
+    
 
     ## Update selection - Bray-Curtis PCoA plot
     updateSelectInput(session, "pcoa_fill_col", choices = meta_colnames)
@@ -1440,67 +1442,15 @@ server <- function(input, output, session) {
       ) +
         guides(fill = FALSE, colour = FALSE)
       
-      ## Sorting the y-axis and faceting options
+      ## Sorting the y-axis and faceting options. I need to overhaul this to use three levels of nested faceting
+      ## So for some reason you need to use the * operators instead of the + for faceting. Not sure why this changed. 
+
       
-      if (input$b1_second_facet == "No") {
+      # Adding second faceting
+      if (input$b1_second_facet == TRUE) {
         bubble_plot <- bubble_plot +
           
-          if (input$b1_confirm_sort == "Yes") {
-            if ((input$b1_facet_side_x == "Top") &
-                (input$b1_facet_side_y == "Right")) {
-              facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-                           space = "free",
-                           scales = "free")
-            } else {
-              if ((input$b1_facet_side_x == "Bottom") &
-                  (input$b1_facet_side_y == "Left")) {
-                facet_nested(
-                  eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-                  space = "free",
-                  scales = "free",
-                  switch = "both"
-                )
-              } else {
-                if ((input$b1_facet_side_x == "Bottom") &
-                    (input$b1_facet_side_y == "Right")) {
-                  facet_nested(
-                    eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-                    space = "free",
-                    scales = "free",
-                    switch = "x"
-                  )
-                } else {
-                  facet_nested(
-                    eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-                    space = "free",
-                    scales = "free",
-                    switch = "y"
-                  )
-                }
-              }
-            }
-          } else {
-            if (input$b1_facet_side_x == "Top") {
-              facet_nested( ~ eval(parse(text = input$b1_sort_param)),
-                            space = "free",
-                            scales = "free")
-            } else {
-              facet_nested(
-                ~ eval(parse(text = input$b1_sort_param)),
-                space = "free",
-                scales = "free",
-                switch = "x"
-              )
-            }
-          }
-      }
-      
-      
-      
-      if (input$b1_second_facet == "Yes") {
-        bubble_plot <- bubble_plot +
-          
-          
+          # First must check the facet options. Not sure how else to do this without running through all possible cases:
           if (input$b1_confirm_sort == "Yes") {
             if ((input$b1_facet_side_x == "Top") &
                 (input$b1_facet_side_y == "Right")) {
@@ -1509,60 +1459,575 @@ server <- function(input, output, session) {
                   eval(parse(text = input$b1_second_facet_meta)),
                 space = "free",
                 scales = "free"
-              )
-            } else {
-              if ((input$b1_facet_side_x == "Bottom") &
-                  (input$b1_facet_side_y == "Left")) {
-                facet_nested(
-                  eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
-                    eval(parse(
-                      text = input$b1_second_facet_meta
-                    )),
-                  space = "free",
-                  scales = "free",
-                  switch = "both"
-                )
-              } else {
-                if ((input$b1_facet_side_x == "Bottom") &
-                    (input$b1_facet_side_y == "Right")) {
-                  facet_nested(
-                    eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
-                      eval(parse(
-                        text = input$b1_second_facet_meta
-                      )),
-                    space = "free",
-                    scales = "free",
-                    switch = "x"
-                  )
-                } else {
-                  facet_nested(
-                    eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
-                      eval(parse(
-                        text = input$b1_second_facet_meta
-                      )),
-                    space = "free",
-                    scales = "free",
-                    switch = "y"
-                  )
-                }
-              }
-            }
-          } else {
-            if (input$b1_facet_side_x == "Top") {
-              facet_nested( ~ eval(parse(text = input$b1_sort_param)) + eval(parse(text =
-                                                                                     input$b1_second_facet_meta)),
-                            space = "free",
-                            scales = "free")
-            } else {
+              )}
+            
+           else if ((input$b1_facet_side_x == "Top") &
+                (input$b1_facet_side_y == "Left")) {
               facet_nested(
-                ~ eval(parse(text = input$b1_sort_param)) + eval(parse(text = input$b1_second_facet_meta)),
+                eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
+                  eval(parse(text = input$b1_second_facet_meta)),
+                space = "free",
+                scales = "free",
+                switch = "y"
+              )}
+            
+          else if ((input$b1_facet_side_x == "Bottom") &
+                (input$b1_facet_side_y == "Left")) {
+              facet_nested(
+                eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
+                  eval(parse(text = input$b1_second_facet_meta)),
+                space = "free",
+                scales = "free",
+                switch = "both"
+              )}
+            
+           else if ((input$b1_facet_side_x == "Bottom") &
+                (input$b1_facet_side_y == "Right")) {
+              facet_nested(
+                eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
+                  eval(parse(text = input$b1_second_facet_meta)),
                 space = "free",
                 scales = "free",
                 switch = "x"
-              )
-            }
+              )}
           }
-      }
+        
+        # Now if you're not sorting the y-axis based on taxonomy:
+       else if (input$b1_confirm_sort == "No") {
+          if (input$b1_facet_side_x == "Top") {
+            facet_nested(
+              ~ eval(parse(text = input$b1_sort_param)) +
+                eval(parse(text = input$b1_second_facet_meta)),
+              space = "free",
+              scales = "free"
+            )
+          }
+          
+         else if (input$b1_facet_side_x == "Bottom") {
+            facet_nested(
+              ~ eval(parse(text = input$b1_sort_param)) +
+                eval(parse(text = input$b1_second_facet_meta)),
+              space = "free",
+              scales = "free",
+              switch = "x"
+            )
+          }
+        }
+      }# This is the end of the second-level faceting
+      
+      
+      # If no additional faceting is chosen:
+      if (input$b1_second_facet == FALSE) {
+        bubble_plot <- bubble_plot +
+          
+          # First must check the facet options. Not sure how else to do this without running through all possible cases:
+          if (input$b1_confirm_sort == "Yes") {
+            if ((input$b1_facet_side_x == "Top") &
+                (input$b1_facet_side_y == "Right")) {
+              facet_nested(
+                eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+                space = "free",
+                scales = "free"
+              )}
+            
+           else if ((input$b1_facet_side_x == "Top") &
+                (input$b1_facet_side_y == "Left")) {
+              facet_nested(
+                eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+                space = "free",
+                scales = "free",
+                switch = "y"
+              )}
+            
+           else if ((input$b1_facet_side_x == "Bottom") &
+                (input$b1_facet_side_y == "Left")) {
+              facet_nested(
+                eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+                space = "free",
+                scales = "free",
+                switch = "both"
+              )}
+            
+           else if ((input$b1_facet_side_x == "Bottom") &
+                (input$b1_facet_side_y == "Right")) {
+              facet_nested(
+                eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+                space = "free",
+                scales = "free",
+                switch = "x"
+              )}
+          }
+        
+        # Now if you're not sorting the y-axis based on taxonomy:
+       else if (input$b1_confirm_sort == "No") {
+          if (input$b1_facet_side_x == "Top") {
+            facet_nested(
+              ~ eval(parse(text = input$b1_sort_param)),
+              space = "free",
+              scales = "free"
+            )
+          }
+          
+        else if (input$b1_facet_side_x == "Bottom") {
+            facet_nested(
+              ~ eval(parse(text = input$b1_sort_param)),
+              space = "free",
+              scales = "free",
+              switch = "x"
+            )
+          }
+        }
+      }# This is the end of default faceting
+      
+      
+      
+      # Third level faceting. This code must come after all others. Not sure why. But if it comes first it doesn't remain dynamic
+      if (input$b1_third_facet == TRUE) {
+        bubble_plot <- bubble_plot +
+          
+          # First must check the facet options. Not sure how else to do this without running through all possible cases:
+          if (input$b1_confirm_sort == "Yes") {
+            if ((input$b1_facet_side_x == "Top") &
+                (input$b1_facet_side_y == "Right")) {
+              facet_nested(
+                eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) *
+                  eval(parse(text = input$b1_second_facet_meta)) * 
+                  eval(parse(text = input$b1_third_facet_meta)),
+                space = "free",
+                scales = "free"
+              )}
+            
+            else if ((input$b1_facet_side_x == "Top") &
+                     (input$b1_facet_side_y == "Left")) {
+              facet_nested(
+                eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) *
+                  eval(parse(text = input$b1_second_facet_meta)) * 
+                  eval(parse(text = input$b1_third_facet_meta)),
+                space = "free",
+                scales = "free",
+                switch = "y"
+              )}
+            
+            else if ((input$b1_facet_side_x == "Bottom") &
+                     (input$b1_facet_side_y == "Left")) {
+              facet_nested(
+                eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) *
+                  eval(parse(text = input$b1_second_facet_meta)) * 
+                  eval(parse(text = input$b1_third_facet_meta)),
+                space = "free",
+                scales = "free",
+                switch = "both"
+              )}
+            else if ((input$b1_facet_side_x == "Bottom") &
+                     (input$b1_facet_side_y == "Right")) {
+              facet_nested(
+                eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) *
+                  eval(parse(text = input$b1_second_facet_meta)) * 
+                  eval(parse(text = input$b1_third_facet_meta)),
+                space = "free",
+                scales = "free",
+                switch = "x"
+              )}
+          }
+        
+        # Now if you're not sorting the y-axis based on taxonomy:
+        else if (input$b1_confirm_sort == "No") {
+          if (input$b1_facet_side_x == "Top") {
+            facet_nested(
+              ~ eval(parse(text = input$b1_sort_param)) *
+                eval(parse(text = input$b1_second_facet_meta)) * 
+                eval(parse(text = input$b1_third_facet_meta)),
+              space = "free",
+              scales = "free"
+            )
+          }
+          
+          else if (input$b1_facet_side_x == "Bottom") {
+            facet_nested(
+              ~ eval(parse(text = input$b1_sort_param)) *
+                eval(parse(text = input$b1_second_facet_meta)) * 
+                eval(parse(text = input$b1_third_facet_meta)),
+              space = "free",
+              scales = "free",
+              switch = "x"
+            )
+          }
+        }
+      }# This is the end of the third-level faceting
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      # # Now for if only second faceting was chosen.
+      # 
+      # if (input$b1_second_facet == TRUE) {
+      #   bubble_plot <- bubble_plot +
+      # 
+      # 
+      #     if (input$b1_confirm_sort == "Yes") {
+      #       if ((input$b1_facet_side_x == "Top") &
+      #           (input$b1_facet_side_y == "Right")) {
+      #         facet_nested(
+      #           eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
+      #             eval(parse(text = input$b1_second_facet_meta)),
+      #           space = "free",
+      #           scales = "free"
+      #         )
+      #       } else {
+      #         if ((input$b1_facet_side_x == "Bottom") &
+      #             (input$b1_facet_side_y == "Left")) {
+      #           facet_nested(
+      #             eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
+      #               eval(parse(
+      #                 text = input$b1_second_facet_meta
+      #               )),
+      #             space = "free",
+      #             scales = "free",
+      #             switch = "both"
+      #           )
+      #         } else {
+      #           if ((input$b1_facet_side_x == "Bottom") &
+      #               (input$b1_facet_side_y == "Right")) {
+      #             facet_nested(
+      #               eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
+      #                 eval(parse(
+      #                   text = input$b1_second_facet_meta
+      #                 )),
+      #               space = "free",
+      #               scales = "free",
+      #               switch = "x"
+      #             )
+      #           } else {
+      #             facet_nested(
+      #               eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
+      #                 eval(parse(
+      #                   text = input$b1_second_facet_meta
+      #                 )),
+      #               space = "free",
+      #               scales = "free",
+      #               switch = "y"
+      #             )
+      #           }
+      #         }
+      #       }
+      #     } else {
+      #       if (input$b1_facet_side_x == "Top") {
+      #         facet_nested( ~ eval(parse(text = input$b1_sort_param)) + eval(parse(text =
+      #                                                                                input$b1_second_facet_meta)),
+      #                       space = "free",
+      #                       scales = "free")
+      #       } else {
+      #         facet_nested(
+      #           ~ eval(parse(text = input$b1_sort_param)) + eval(parse(text = input$b1_second_facet_meta)),
+      #           space = "free",
+      #           scales = "free",
+      #           switch = "x"
+      #         )
+      #       }
+      #     }
+      # }
+
+
+      # ## If no second faceting, then default to single faceting
+      # if (input$b1_second_facet == FALSE) {
+      #   bubble_plot <- bubble_plot +
+      # 
+      #     if (input$b1_confirm_sort == "Yes") {
+      #       if ((input$b1_facet_side_x == "Top") &
+      #           (input$b1_facet_side_y == "Right")) {
+      #         facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+      #                      space = "free",
+      #                      scales = "free")
+      #       } else {
+      #         if ((input$b1_facet_side_x == "Bottom") &
+      #             (input$b1_facet_side_y == "Left")) {
+      #           facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+      #                        space = "free",
+      #                        scales = "free",
+      #                        switch = "both"
+      #           )
+      #         } else {
+      #           if ((input$b1_facet_side_x == "Bottom") &
+      #               (input$b1_facet_side_y == "Right")) {
+      #             facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+      #                          space = "free",
+      #                          scales = "free",
+      #                          switch = "x"
+      #             )
+      #           } else {
+      #             facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+      #                          space = "free",
+      #                          scales = "free",
+      #                          switch = "y"
+      #             )
+      #           }
+      #         }
+      #       }
+      #     } else {
+      #       if (input$b1_facet_side_x == "Top") {
+      #         facet_nested( ~ eval(parse(text = input$b1_sort_param)),
+      #                       space = "free",
+      #                       scales = "free")
+      #       } else {
+      #         facet_nested(
+      #           ~ eval(parse(text = input$b1_sort_param)),
+      #           space = "free",
+      #           scales = "free",
+      #           switch = "x"
+      #         )
+      #       }
+      #     }
+      # }
+      
+      
+      # ## If no second faceting, then default to single faceting
+      # if (input$b1_second_facet == FALSE) {
+      #   bubble_plot <- bubble_plot +
+      #     
+      #     if (input$b1_confirm_sort == "Yes") {
+      #       
+      #       if ((input$b1_facet_side_x == "Top") &
+      #           (input$b1_facet_side_y == "Right")) {
+      #         facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+      #                      space = "free",
+      #                      scales = "free"
+      #         )
+      #       }
+      #       
+      #       if ((input$b1_facet_side_x == "Bottom") &
+      #           (input$b1_facet_side_y == "Right")) {
+      #         facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+      #                      space = "free",
+      #                      scales = "free",
+      #                      switch = "x"
+      #         )
+      #       }
+      #       
+      #       if ((input$b1_facet_side_x == "Top") &
+      #           (input$b1_facet_side_y == "Left")) {
+      #         facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+      #                      space = "free",
+      #                      scales = "free",
+      #                      switch = "y"
+      #         )
+      #       }
+      #       
+      #       if ((input$b1_facet_side_x == "Bottom") &
+      #           (input$b1_facet_side_y == "Left")) {
+      #         facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+      #                      space = "free",
+      #                      scales = "free",
+      #                      switch = "both"
+      #         )
+      #       }
+      #     }
+      #   
+      #   if (input$b1_confirm_sort == "No") {
+      #     
+      #     if (input$b1_facet_side_x == "Top") {
+      #       facet_nested( ~ eval(parse(text = input$b1_sort_param)),
+      #                     space = "free",
+      #                     scales = "free"
+      #       )
+      #     }
+      #     
+      #     if (input$b1_facet_side_x == "Bottom") {
+      #       facet_nested( ~ eval(parse(text = input$b1_sort_param)),
+      #                     space = "free",
+      #                     scales = "free",
+      #                     switch = "x"
+      #       )
+      #     }
+      #   }
+      # }
+      # 
+      
+      # Original working
+      # if (input$b1_second_facet == TRUE) {
+      #   bubble_plot <- bubble_plot +
+      # 
+      #     if (input$b1_confirm_sort == "Yes") {
+      #       if ((input$b1_facet_side_x == "Top") &
+      #           (input$b1_facet_side_y == "Right")) {
+      #         facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+      #                      space = "free",
+      #                      scales = "free")
+      #       } else {
+      #         if ((input$b1_facet_side_x == "Bottom") &
+      #             (input$b1_facet_side_y == "Left")) {
+      #           facet_nested(
+      #             eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+      #             space = "free",
+      #             scales = "free",
+      #             switch = "both"
+      #           )
+      #         } else {
+      #           if ((input$b1_facet_side_x == "Bottom") &
+      #               (input$b1_facet_side_y == "Right")) {
+      #             facet_nested(
+      #               eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+      #               space = "free",
+      #               scales = "free",
+      #               switch = "x"
+      #             )
+      #           } else {
+      #             facet_nested(
+      #               eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+      #               space = "free",
+      #               scales = "free",
+      #               switch = "y"
+      #             )
+      #           }
+      #         }
+      #       }
+      #     } else {
+      #       if (input$b1_facet_side_x == "Top") {
+      #         facet_nested( ~ eval(parse(text = input$b1_sort_param)),
+      #                       space = "free",
+      #                       scales = "free")
+      #       } else {
+      #         facet_nested(
+      #           ~ eval(parse(text = input$b1_sort_param)),
+      #           space = "free",
+      #           scales = "free",
+      #           switch = "x"
+      #         )
+      #       }
+      #     }
+      # }
+      
+      
+      # # If second facet is desired: 
+      # 
+      # if (input$b1_second_facet == TRUE) {
+      #   bubble_plot <- bubble_plot +
+      #     
+      #     
+      #     if (input$b1_confirm_sort == "Yes") {
+      #       if ((input$b1_facet_side_x == "Top") &
+      #           (input$b1_facet_side_y == "Right")) {
+      #         facet_nested(
+      #           eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
+      #             eval(parse(text = input$b1_second_facet_meta)),
+      #           space = "free",
+      #           scales = "free"
+      #         )
+      #       } else {
+      #         if ((input$b1_facet_side_x == "Bottom") &
+      #             (input$b1_facet_side_y == "Left")) {
+      #           facet_nested(
+      #             eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
+      #               eval(parse(
+      #                 text = input$b1_second_facet_meta
+      #               )),
+      #             space = "free",
+      #             scales = "free",
+      #             switch = "both"
+      #           )
+      #         } else {
+      #           if ((input$b1_facet_side_x == "Bottom") &
+      #               (input$b1_facet_side_y == "Right")) {
+      #             facet_nested(
+      #               eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
+      #                 eval(parse(
+      #                   text = input$b1_second_facet_meta
+      #                 )),
+      #               space = "free",
+      #               scales = "free",
+      #               switch = "x"
+      #             )
+      #           } else {
+      #             facet_nested(
+      #               eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
+      #                 eval(parse(
+      #                   text = input$b1_second_facet_meta
+      #                 )),
+      #               space = "free",
+      #               scales = "free",
+      #               switch = "y"
+      #             )
+      #           }
+      #         }
+      #       }
+      #     } else {
+      #       if (input$b1_facet_side_x == "Top") {
+      #         facet_nested( ~ eval(parse(text = input$b1_sort_param)) + eval(parse(text =
+      #                                                                                input$b1_second_facet_meta)),
+      #                       space = "free",
+      #                       scales = "free")
+      #       } else {
+      #         facet_nested(
+      #           ~ eval(parse(text = input$b1_sort_param)) + eval(parse(text = input$b1_second_facet_meta)),
+      #           space = "free",
+      #           scales = "free",
+      #           switch = "x"
+      #         )
+      #       }
+      #     }
+      # }
+      # 
+      # 
+      # ## If no second faceting, then default to single faceting 
+      # if (input$b1_second_facet == FALSE) {
+      #   bubble_plot <- bubble_plot +
+      #     
+      #     if (input$b1_confirm_sort == "Yes") {
+      #       if ((input$b1_facet_side_x == "Top") &
+      #           (input$b1_facet_side_y == "Right")) {
+      #         facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+      #                      space = "free",
+      #                      scales = "free")
+      #       } else {
+      #         if ((input$b1_facet_side_x == "Bottom") &
+      #             (input$b1_facet_side_y == "Left")) {
+      #           facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+      #                        space = "free",
+      #                        scales = "free",
+      #                        switch = "both"
+      #           )
+      #         } else {
+      #           if ((input$b1_facet_side_x == "Bottom") &
+      #               (input$b1_facet_side_y == "Right")) {
+      #             facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+      #                          space = "free",
+      #                          scales = "free",
+      #                          switch = "x"
+      #             )
+      #           } else {
+      #             facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
+      #                          space = "free",
+      #                          scales = "free",
+      #                          switch = "y"
+      #             )
+      #           }
+      #         }
+      #       }
+      #     } else {
+      #       if (input$b1_facet_side_x == "Top") {
+      #         facet_nested( ~ eval(parse(text = input$b1_sort_param)),
+      #                       space = "free",
+      #                       scales = "free")
+      #       } else {
+      #         facet_nested(
+      #           ~ eval(parse(text = input$b1_sort_param)),
+      #           space = "free",
+      #           scales = "free",
+      #           switch = "x"
+      #         )
+      #       }
+      #     }
+      # }
 
       ## Add the bubbles and percentage labels to the plot:
       
