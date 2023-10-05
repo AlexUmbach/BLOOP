@@ -15,12 +15,18 @@ server <- function(input, output, session) {
   output$ranked_plot_out <- renderDT(NULL)
   output$uni_pcoa_plot_out <- renderDT(NULL)
   
-  ## These monitor the status of the various start buttons on each tab
-  read_start_pressed <- reactiveVal(FALSE)
-  bar_start_pressed <- reactiveVal(FALSE)
-  bubble_start_pressed <- reactiveVal(FALSE)
-  pcoa_start_pressed <- reactiveVal(FALSE)
-  ranked_start_pressed <- reactiveVal(FALSE)
+  
+  # # Start buttons
+  # read_start_pressed <- reactiveVal(FALSE)
+
+  
+  # ## These monitor the status of the various start buttons on each tab
+  # observe({
+  # bar_start_pressed <- reactiveVal(FALSE)
+  # bubble_start_pressed <- reactiveVal(FALSE)
+  # pcoa_start_pressed <- reactiveVal(FALSE)
+  # ranked_start_pressed <- reactiveVal(FALSE)
+  # })
   
   ## These pass on the metadata column names to all of the drop down menus
   observe({
@@ -72,6 +78,7 @@ server <- function(input, output, session) {
     updateTabItems(session, "ranked_meta_keyword")
     updateSelectInput(session, "ranked_second_facet_meta", choices = meta_colnames)
     updateSelectInput(session, "ranked_sort_axis", choices = meta_colnames)
+    updateCheckboxInput(session, "pcoa_sample_labels")
     
     
   })
@@ -223,13 +230,13 @@ server <- function(input, output, session) {
     data_tran <- main_datafile()
     
     ## Converting collapsed tables to ASV tables, and standardizing formatting, including adding rowID columns
-    if (input$is_main_collapsed == "Yes") {
+    if (input$is_main_collapsed == TRUE) {
       data_tran$Consensus.Lineage <- data_tran$Feature.ID
       # data_tran <- within(data_tran, rm("Feature.ID"))
       data_tran$Feature.ID <- 1:nrow(data_tran)
       data_tran$rowID <- 1:nrow(data_tran)
     } else {
-      if (input$is_main_collapsed == "No") {
+      if (input$is_main_collapsed == FALSE) {
         if ("rowID" %in% colnames(data_tran)) {
           data_tran
         } else {
@@ -289,7 +296,7 @@ server <- function(input, output, session) {
     data_tran <- data_tran_contam_filt_react()
     
     ## Need to set the labels here first, not elsewhere (like in other reactive elements)
-    if (input$is_main_collapsed == "Yes") {
+    if (input$is_main_collapsed == TRUE) {
       labels <- data_tran$Consensus.Lineage
       labels <- paste(labels, data_tran$rowID, sep = "_")
       data_tran$Consensus.Lineage <-
@@ -416,7 +423,7 @@ server <- function(input, output, session) {
     req(input$main_file)
     req(input$meta_file)
     
-    if (input$is_main_collapsed == "Yes") {
+    if (input$is_main_collapsed == TRUE) {
       labels <- data_tran$Consensus.Lineage
       labels <- paste(labels, data_tran$Feature.ID, sep = "_")
     } else {
@@ -512,6 +519,15 @@ server <- function(input, output, session) {
   
   #### Total read plot ####
   
+    # observeEvent
+  
+  giant_read_reactive <- reactive({
+    req(input$read_start)
+    # 
+    # if (!read_start_pressed()){
+    #   return(NULL)
+    # }
+    
     data_read_table <- reactive({
       filtered_table <- data_filtered_table()
       meta_data_table <- meta_datafile()
@@ -696,17 +712,24 @@ server <- function(input, output, session) {
       
       read_plot
     })
-    
+
+
     output$read_table_out <- renderDataTable({
       read_table <- data_read_table()
       read_table
     })
     
-    ## You must define the input for width/height within a reactive context, then call it in the output.
+    
+    
+    ## You must define the input for width/height within a reactive context, then call it in the output
     read_plot_height = reactive(input$read_plot_out_h)
     read_plot_width = reactive(input$read_plot_out_w)
+
     
     output$read_plot = renderPlot({
+      # if (!read_start_pressed()){
+      #   return(NULL)
+      # }
       # if (read_start_pressed())
       # input$read_start
       read_plot = data_read_plot()
@@ -715,6 +738,17 @@ server <- function(input, output, session) {
     },
     width = read_plot_width,
     height = read_plot_height)
+    })# End of giant reactive
+  # End of if
+  
+  # #
+  # observeEvent(input$read_start, {
+  #   read_start_pressed(TRUE)
+  # })
+  
+  
+
+    
     
   output$read_download = downloadHandler(
     filename = "read_plot.pdf",
@@ -838,7 +872,7 @@ server <- function(input, output, session) {
       
       ## Add representative sequences back into the data by merging tables based on taxonomy. If collapsed, skips.
       unfiltered_table$Taxonomy <- rownames(unfiltered_table)
-      if (input$is_main_collapsed == "No") {
+      if (input$is_main_collapsed == FALSE) {
         unfiltered_table <- unfiltered_table[, c("Taxonomy", "ReprSequence")]
       }
       bar_data_long <- left_join(bar_data_long,
@@ -1225,7 +1259,7 @@ server <- function(input, output, session) {
       
       ## Add representative sequences back into the data by merging tables based on taxonomy. If collapsed, skips.
       unfiltered_table$Taxonomy <- rownames(unfiltered_table)
-      if (input$is_main_collapsed == "No") {
+      if (input$is_main_collapsed == FALSE) {
         unfiltered_table <- unfiltered_table[, c("Taxonomy", "ReprSequence")]
       }
       B2_data_long <- left_join(B2_data_long,
@@ -1655,379 +1689,6 @@ server <- function(input, output, session) {
         }
       }# This is the end of the third-level faceting
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      # # Now for if only second faceting was chosen.
-      # 
-      # if (input$b1_second_facet == TRUE) {
-      #   bubble_plot <- bubble_plot +
-      # 
-      # 
-      #     if (input$b1_confirm_sort == "Yes") {
-      #       if ((input$b1_facet_side_x == "Top") &
-      #           (input$b1_facet_side_y == "Right")) {
-      #         facet_nested(
-      #           eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
-      #             eval(parse(text = input$b1_second_facet_meta)),
-      #           space = "free",
-      #           scales = "free"
-      #         )
-      #       } else {
-      #         if ((input$b1_facet_side_x == "Bottom") &
-      #             (input$b1_facet_side_y == "Left")) {
-      #           facet_nested(
-      #             eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
-      #               eval(parse(
-      #                 text = input$b1_second_facet_meta
-      #               )),
-      #             space = "free",
-      #             scales = "free",
-      #             switch = "both"
-      #           )
-      #         } else {
-      #           if ((input$b1_facet_side_x == "Bottom") &
-      #               (input$b1_facet_side_y == "Right")) {
-      #             facet_nested(
-      #               eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
-      #                 eval(parse(
-      #                   text = input$b1_second_facet_meta
-      #                 )),
-      #               space = "free",
-      #               scales = "free",
-      #               switch = "x"
-      #             )
-      #           } else {
-      #             facet_nested(
-      #               eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
-      #                 eval(parse(
-      #                   text = input$b1_second_facet_meta
-      #                 )),
-      #               space = "free",
-      #               scales = "free",
-      #               switch = "y"
-      #             )
-      #           }
-      #         }
-      #       }
-      #     } else {
-      #       if (input$b1_facet_side_x == "Top") {
-      #         facet_nested( ~ eval(parse(text = input$b1_sort_param)) + eval(parse(text =
-      #                                                                                input$b1_second_facet_meta)),
-      #                       space = "free",
-      #                       scales = "free")
-      #       } else {
-      #         facet_nested(
-      #           ~ eval(parse(text = input$b1_sort_param)) + eval(parse(text = input$b1_second_facet_meta)),
-      #           space = "free",
-      #           scales = "free",
-      #           switch = "x"
-      #         )
-      #       }
-      #     }
-      # }
-
-
-      # ## If no second faceting, then default to single faceting
-      # if (input$b1_second_facet == FALSE) {
-      #   bubble_plot <- bubble_plot +
-      # 
-      #     if (input$b1_confirm_sort == "Yes") {
-      #       if ((input$b1_facet_side_x == "Top") &
-      #           (input$b1_facet_side_y == "Right")) {
-      #         facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-      #                      space = "free",
-      #                      scales = "free")
-      #       } else {
-      #         if ((input$b1_facet_side_x == "Bottom") &
-      #             (input$b1_facet_side_y == "Left")) {
-      #           facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-      #                        space = "free",
-      #                        scales = "free",
-      #                        switch = "both"
-      #           )
-      #         } else {
-      #           if ((input$b1_facet_side_x == "Bottom") &
-      #               (input$b1_facet_side_y == "Right")) {
-      #             facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-      #                          space = "free",
-      #                          scales = "free",
-      #                          switch = "x"
-      #             )
-      #           } else {
-      #             facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-      #                          space = "free",
-      #                          scales = "free",
-      #                          switch = "y"
-      #             )
-      #           }
-      #         }
-      #       }
-      #     } else {
-      #       if (input$b1_facet_side_x == "Top") {
-      #         facet_nested( ~ eval(parse(text = input$b1_sort_param)),
-      #                       space = "free",
-      #                       scales = "free")
-      #       } else {
-      #         facet_nested(
-      #           ~ eval(parse(text = input$b1_sort_param)),
-      #           space = "free",
-      #           scales = "free",
-      #           switch = "x"
-      #         )
-      #       }
-      #     }
-      # }
-      
-      
-      # ## If no second faceting, then default to single faceting
-      # if (input$b1_second_facet == FALSE) {
-      #   bubble_plot <- bubble_plot +
-      #     
-      #     if (input$b1_confirm_sort == "Yes") {
-      #       
-      #       if ((input$b1_facet_side_x == "Top") &
-      #           (input$b1_facet_side_y == "Right")) {
-      #         facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-      #                      space = "free",
-      #                      scales = "free"
-      #         )
-      #       }
-      #       
-      #       if ((input$b1_facet_side_x == "Bottom") &
-      #           (input$b1_facet_side_y == "Right")) {
-      #         facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-      #                      space = "free",
-      #                      scales = "free",
-      #                      switch = "x"
-      #         )
-      #       }
-      #       
-      #       if ((input$b1_facet_side_x == "Top") &
-      #           (input$b1_facet_side_y == "Left")) {
-      #         facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-      #                      space = "free",
-      #                      scales = "free",
-      #                      switch = "y"
-      #         )
-      #       }
-      #       
-      #       if ((input$b1_facet_side_x == "Bottom") &
-      #           (input$b1_facet_side_y == "Left")) {
-      #         facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-      #                      space = "free",
-      #                      scales = "free",
-      #                      switch = "both"
-      #         )
-      #       }
-      #     }
-      #   
-      #   if (input$b1_confirm_sort == "No") {
-      #     
-      #     if (input$b1_facet_side_x == "Top") {
-      #       facet_nested( ~ eval(parse(text = input$b1_sort_param)),
-      #                     space = "free",
-      #                     scales = "free"
-      #       )
-      #     }
-      #     
-      #     if (input$b1_facet_side_x == "Bottom") {
-      #       facet_nested( ~ eval(parse(text = input$b1_sort_param)),
-      #                     space = "free",
-      #                     scales = "free",
-      #                     switch = "x"
-      #       )
-      #     }
-      #   }
-      # }
-      # 
-      
-      # Original working
-      # if (input$b1_second_facet == TRUE) {
-      #   bubble_plot <- bubble_plot +
-      # 
-      #     if (input$b1_confirm_sort == "Yes") {
-      #       if ((input$b1_facet_side_x == "Top") &
-      #           (input$b1_facet_side_y == "Right")) {
-      #         facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-      #                      space = "free",
-      #                      scales = "free")
-      #       } else {
-      #         if ((input$b1_facet_side_x == "Bottom") &
-      #             (input$b1_facet_side_y == "Left")) {
-      #           facet_nested(
-      #             eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-      #             space = "free",
-      #             scales = "free",
-      #             switch = "both"
-      #           )
-      #         } else {
-      #           if ((input$b1_facet_side_x == "Bottom") &
-      #               (input$b1_facet_side_y == "Right")) {
-      #             facet_nested(
-      #               eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-      #               space = "free",
-      #               scales = "free",
-      #               switch = "x"
-      #             )
-      #           } else {
-      #             facet_nested(
-      #               eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-      #               space = "free",
-      #               scales = "free",
-      #               switch = "y"
-      #             )
-      #           }
-      #         }
-      #       }
-      #     } else {
-      #       if (input$b1_facet_side_x == "Top") {
-      #         facet_nested( ~ eval(parse(text = input$b1_sort_param)),
-      #                       space = "free",
-      #                       scales = "free")
-      #       } else {
-      #         facet_nested(
-      #           ~ eval(parse(text = input$b1_sort_param)),
-      #           space = "free",
-      #           scales = "free",
-      #           switch = "x"
-      #         )
-      #       }
-      #     }
-      # }
-      
-      
-      # # If second facet is desired: 
-      # 
-      # if (input$b1_second_facet == TRUE) {
-      #   bubble_plot <- bubble_plot +
-      #     
-      #     
-      #     if (input$b1_confirm_sort == "Yes") {
-      #       if ((input$b1_facet_side_x == "Top") &
-      #           (input$b1_facet_side_y == "Right")) {
-      #         facet_nested(
-      #           eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
-      #             eval(parse(text = input$b1_second_facet_meta)),
-      #           space = "free",
-      #           scales = "free"
-      #         )
-      #       } else {
-      #         if ((input$b1_facet_side_x == "Bottom") &
-      #             (input$b1_facet_side_y == "Left")) {
-      #           facet_nested(
-      #             eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
-      #               eval(parse(
-      #                 text = input$b1_second_facet_meta
-      #               )),
-      #             space = "free",
-      #             scales = "free",
-      #             switch = "both"
-      #           )
-      #         } else {
-      #           if ((input$b1_facet_side_x == "Bottom") &
-      #               (input$b1_facet_side_y == "Right")) {
-      #             facet_nested(
-      #               eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
-      #                 eval(parse(
-      #                   text = input$b1_second_facet_meta
-      #                 )),
-      #               space = "free",
-      #               scales = "free",
-      #               switch = "x"
-      #             )
-      #           } else {
-      #             facet_nested(
-      #               eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)) +
-      #                 eval(parse(
-      #                   text = input$b1_second_facet_meta
-      #                 )),
-      #               space = "free",
-      #               scales = "free",
-      #               switch = "y"
-      #             )
-      #           }
-      #         }
-      #       }
-      #     } else {
-      #       if (input$b1_facet_side_x == "Top") {
-      #         facet_nested( ~ eval(parse(text = input$b1_sort_param)) + eval(parse(text =
-      #                                                                                input$b1_second_facet_meta)),
-      #                       space = "free",
-      #                       scales = "free")
-      #       } else {
-      #         facet_nested(
-      #           ~ eval(parse(text = input$b1_sort_param)) + eval(parse(text = input$b1_second_facet_meta)),
-      #           space = "free",
-      #           scales = "free",
-      #           switch = "x"
-      #         )
-      #       }
-      #     }
-      # }
-      # 
-      # 
-      # ## If no second faceting, then default to single faceting 
-      # if (input$b1_second_facet == FALSE) {
-      #   bubble_plot <- bubble_plot +
-      #     
-      #     if (input$b1_confirm_sort == "Yes") {
-      #       if ((input$b1_facet_side_x == "Top") &
-      #           (input$b1_facet_side_y == "Right")) {
-      #         facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-      #                      space = "free",
-      #                      scales = "free")
-      #       } else {
-      #         if ((input$b1_facet_side_x == "Bottom") &
-      #             (input$b1_facet_side_y == "Left")) {
-      #           facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-      #                        space = "free",
-      #                        scales = "free",
-      #                        switch = "both"
-      #           )
-      #         } else {
-      #           if ((input$b1_facet_side_x == "Bottom") &
-      #               (input$b1_facet_side_y == "Right")) {
-      #             facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-      #                          space = "free",
-      #                          scales = "free",
-      #                          switch = "x"
-      #             )
-      #           } else {
-      #             facet_nested(eval(parse(text = input$b1_tax_sort)) ~ eval(parse(text = input$b1_sort_param)),
-      #                          space = "free",
-      #                          scales = "free",
-      #                          switch = "y"
-      #             )
-      #           }
-      #         }
-      #       }
-      #     } else {
-      #       if (input$b1_facet_side_x == "Top") {
-      #         facet_nested( ~ eval(parse(text = input$b1_sort_param)),
-      #                       space = "free",
-      #                       scales = "free")
-      #       } else {
-      #         facet_nested(
-      #           ~ eval(parse(text = input$b1_sort_param)),
-      #           space = "free",
-      #           scales = "free",
-      #           switch = "x"
-      #         )
-      #       }
-      #     }
-      # }
 
       ## Add the bubbles and percentage labels to the plot:
       
@@ -2395,14 +2056,12 @@ server <- function(input, output, session) {
       available_colors <- 2:27
       available_fill <- 2:27
       
-      
-      
-      if (input$shape_choice == "Yes"){
+      if (input$shape_choice == TRUE){
       # Plot PCoA using ggplot2 with shape and color based on metadata
       pcoa_plot <- ggplot(merged_df, aes(x = PCoA1, y = PCoA2)) +
         # geom_point(size = 4, aes(shape = eval(parse(text = )), fill = get(input$pcoa_fill_col))) +
       
-        geom_point(size = 4, aes(
+        geom_point(size = input$pcoa_size_select, aes(
           # shape = eval(parse(text = paste("merged_df$",input$pcoa_shape))),
           # colour = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))),
           # fill = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))))) +
@@ -2426,7 +2085,10 @@ server <- function(input, output, session) {
             "%",
             ")",
             sep = ""
-          )
+          ),
+          fill = input$pcoa_fill_col,
+          colour = input$pcoa_fill_col,
+          shape = input$pcoa_shape
         ) +
         # scale_shape_manual(values = available_shapes, name = paste("Data",eval(parse(text = input$pcoa_shape)),sep = "")) +
         # scale_fill_manual(values = available_fill, name =  paste("Data2",eval(parse(text = input$pcoa_fill_col)),sep = "")) +
@@ -2437,10 +2099,16 @@ server <- function(input, output, session) {
       # scale_colour_manual(values = available_colors, name = "colour", guide = "none")
         }
       
-      if (input$shape_choice == "No"){
+      if (input$shape_choice == FALSE){
+        
+        # Collect the names of the metadata category selected
+        
+        pcoa_colour_name <- input$pcoa_fill_col
+        
+        
         pcoa_plot <- ggplot(merged_df, aes(x = PCoA1, y = PCoA2)) +
           # geom_point(size = 4, aes(shape = eval(parse(text = )), fill = get(input$pcoa_fill_col))) +
-              geom_point(size = 4, aes(
+              geom_point(size = input$pcoa_size_select, aes(
               # shape = eval(parse(text = paste("merged_df$",input$pcoa_shape))),
               # colour = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))),
               # fill = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))))) +
@@ -2463,7 +2131,10 @@ server <- function(input, output, session) {
                   "%",
                   ")",
                   sep = ""
-                )
+                ),
+                # figuring out labeling took way too long, but you don't actually need to do anything more than use the input. 
+                fill = input$pcoa_fill_col,
+                colour = input$pcoa_fill_col
               ) +
               # scale_shape_manual(values = available_shapes, name = paste("Data",eval(parse(text = input$pcoa_shape)),sep = "")) +
               # scale_fill_manual(values = available_fill, name =  paste("Data2",eval(parse(text = input$pcoa_fill_col)),sep = "")) +
@@ -2498,8 +2169,16 @@ server <- function(input, output, session) {
           )
       }
       
+      
+      # If sample labels are selected:
+      if (input$pcoa_sample_labels == TRUE){
+        pcoa_plot <- pcoa_plot +
+          geom_text(aes(label = SampleName))
+      }
+      
+      
       # Do you want to include an ellipsis around your data points?:
-      if (input$pcoa_elips == "Yes") {
+      if (input$pcoa_elips == TRUE) {
         pcoa_plot <-
           pcoa_plot + stat_ellipse(aes(color = get(input$pcoa_fill_col)),
                                    show.legend = FALSE)
@@ -2816,12 +2495,12 @@ server <- function(input, output, session) {
     
     
     
-    if (input$uni_shape_choice == "Yes"){
+    if (input$uni_shape_choice == TRUE){
       # Plot PCoA using ggplot2 with shape and color based on metadata
       pcoa_plot <- ggplot(merged_df, aes(x = PCoA1, y = PCoA2)) +
         # geom_point(size = 4, aes(shape = eval(parse(text = )), fill = get(input$pcoa_fill_col))) +
         
-        geom_point(size = 4, aes(
+        geom_point(size = input$uni_pcoa_size_select, aes(
           # shape = eval(parse(text = paste("merged_df$",input$pcoa_shape))),
           # colour = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))),
           # fill = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))))) +
@@ -2845,7 +2524,10 @@ server <- function(input, output, session) {
             "%",
             ")",
             sep = ""
-          )
+          ),
+          fill = input$uni_pcoa_fill_col,
+          colour = input$uni_pcoa_fill_col,
+          shape = input$uni_pcoa_shape
         ) +
         # scale_shape_manual(values = available_shapes, name = paste("Data",eval(parse(text = input$pcoa_shape)),sep = "")) +
         # scale_fill_manual(values = available_fill, name =  paste("Data2",eval(parse(text = input$pcoa_fill_col)),sep = "")) +
@@ -2856,10 +2538,10 @@ server <- function(input, output, session) {
       # scale_colour_manual(values = available_colors, name = "colour", guide = "none")
     }
     
-    if (input$uni_shape_choice == "No"){
+    if (input$uni_shape_choice == FALSE){
       pcoa_plot <- ggplot(merged_df, aes(x = PCoA1, y = PCoA2)) +
         # geom_point(size = 4, aes(shape = eval(parse(text = )), fill = get(input$pcoa_fill_col))) +
-        geom_point(size = 4, aes(
+        geom_point(size = input$uni_pcoa_size_select, aes(
           # shape = eval(parse(text = paste("merged_df$",input$pcoa_shape))),
           # colour = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))),
           # fill = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))))) +
@@ -2882,7 +2564,9 @@ server <- function(input, output, session) {
             "%",
             ")",
             sep = ""
-          )
+          ),
+          fill = input$uni_pcoa_fill_col,
+          colour = input$uni_pcoa_fill_col
         ) +
         # scale_shape_manual(values = available_shapes, name = paste("Data",eval(parse(text = input$pcoa_shape)),sep = "")) +
         # scale_fill_manual(values = available_fill, name =  paste("Data2",eval(parse(text = input$pcoa_fill_col)),sep = "")) +
@@ -2917,13 +2601,20 @@ server <- function(input, output, session) {
         )
     }
     
+    
+    # If sample labels are selected:
+    if (input$pcoa_sample_labels == TRUE){
+      pcoa_plot <- pcoa_plot +
+        geom_text(aes(label = SampleName))
+    }
+    
     # Do you want to include an ellipsis around your data points?:
-    if (input$uni_pcoa_elips == "Yes") {
+    if (input$uni_pcoa_elips == TRUE) {
       pcoa_plot <-
         pcoa_plot + stat_ellipse(aes(color = get(input$uni_pcoa_fill_col)),
                                  show.legend = FALSE)
     }
-    
+
     
     
     # # Taxon points
@@ -3228,7 +2919,7 @@ server <- function(input, output, session) {
     
     ## Add representative sequences back into the data by merging tables based on taxonomy. If collapsed, skips.
     unfiltered_table$Taxonomy = rownames(unfiltered_table)
-    if (input$is_main_collapsed == "No") {
+    if (input$is_main_collapsed == FALSE) {
       unfiltered_table = unfiltered_table[, c("Taxonomy", "ReprSequence")]
     }
     B2_data_long = left_join(B2_data_long,
