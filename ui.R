@@ -24,6 +24,7 @@ library(tidytext)
 library(ggh4x)
 # library(msa); removed because no reason to exist right now
 library(shinyjs)
+library(patchwork)
 
 
 ## Set working directory. This should be the directory where app.R is stored. 
@@ -371,6 +372,7 @@ ui <- navbarPage(id = "navbarID",
                                 selectInput("b1_sort_axis","How do you want to order your individual samples?",choices = "Updating"),
                                 selectInput("b1_sort_param","How do you want to group samples (i.e., faceting)?", choices = "Updating"),
                                 selectInput("b1_color_param","How do you want to colour your bubbles?", choices = "Updating"),
+                                checkboxInput("b1_include_read","Do you want to include sample counts in a read plot?", FALSE),
                                 checkboxInput("b1_second_facet", "Do you want a second facet?", FALSE),
                                 #radioButtons("b1_second_facet","Do you want to group by a second category?",choices = c("Yes","No"), selected = "No", inline = TRUE),
                                 

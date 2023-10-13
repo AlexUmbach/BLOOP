@@ -1785,7 +1785,135 @@ server <- function(input, output, session) {
       
       bubble_plot
       
+      
+      
+      ## Now add an optional read plot
+        filtered_table <- data_filtered_table()
+        meta_data_table <- meta_datafile()
+        
+        data_read <- filtered_table
+        data_read <- rbind(data_read, Total = colSums(data_read))
+        data_read_total <- data_read["Total", ]
+        data_read_total <-
+          reshape2::melt(
+            data_read_total,
+            variable.name = as.character("SampleName"),
+            value.name = "Total"
+          )
+        
+        ## Add metadata columns
+        data_read_total <-
+          left_join(data_read_total,
+                    meta_data_table,
+                    by = "SampleName",
+                    copy = FALSE)
+        
+        ## Reorder x-axis to follow metadata category in data frame
+        data_read_total$SampleName <-
+          as.character(data_read_total$SampleName)
+        data_read_total$SampleName <-
+          factor(data_read_total$SampleName,
+                 levels = unique(data_read_total$SampleName))
+        
+        ## Make a list of unique metadata
+        read_meta_list <- unique(input$b1_sort_param)
+        
+          read_plot <- ggplot(data = data_read_total,
+                              aes(
+                                x = SampleName,
+                                y = Total,
+                                width = 0.9
+                              ))
+          
+          read_plot <-
+            read_plot + geom_bar(
+              aes(fill = "grey"),
+              colour = "black",
+              size = input$read_border_bold,
+              alpha = input$read_alpha,
+              stat = "identity",
+              ## this position_dodge preserves the size of the bar, so that you don't have different sized bars for identical sample names. position=position_dodge(preserve = "total")
+              ## to make a stacked bar plot, also involved in pie charts
+              position = "stack"
+            ) + scale_fill_manual(values = "grey")
+          
+          read_plot
+          
+        
+        ## setting the graph so that it begins at the x-axis and there is no gap. Also sets the limits of the y-axis.
+        read_plot <- read_plot + scale_y_continuous(expand = c(0, 0),
+                                                    limit = (c(0, max(data_read_total$Total + 10000))))
+        
+        ## Add faceting for sorting, requires to work alongside the multiple faceting options in the bubble plot. 
+        # If second-level faceting:
+        if (input$b1_second_facet == TRUE){
+          read_plot <- read_plot +
+            facet_grid(~ eval(parse(text = input$b1_sort_param)) + eval(parse(text = input$b1_second_facet_meta)),
+              space = "free",
+              scales = "free",
+              switch = "both"
+            )
+        }
+        
+        # Default faceting - single level
+        if (input$b1_second_facet == FALSE){
+          read_plot <- read_plot +
+          facet_grid(
+            ~ eval(parse(text = input$b1_sort_param)),
+            space = "free",
+            scales = "free",
+            switch = "both"
+          )
+        }
+        
+        if (input$b1_third_facet == TRUE){
+          read_plot <- read_plot +
+            facet_grid( ~ eval(parse(text = input$b1_sort_param)) * eval(parse(text = input$b1_second_facet_meta)) * eval(parse(text = input$b1_third_facet_meta)),
+              space = "free",
+              scales = "free",
+              switch = "both"
+            )
+        }
+        
+        #If third-level faceting:
+        
+          read_plot <- read_plot + theme_bw() +
+            theme(
+              panel.grid = element_blank(),
+              text = element_text(colour = "black"),
+              #axis.line = element_line(colour = "black"),
+              axis.line = element_blank(),
+              axis.text = element_text(colour = "black", size = 12),
+              axis.text.x = element_blank(),
+              axis.ticks.x = element_blank(),
+              legend.text = element_text(face = "italic", size = 12),
+              legend.title = element_text(size = 10),
+              panel.spacing = unit(as.numeric(input$b1_panel_spacing), "points"),
+              legend.position = "none",
+              axis.title.x = element_blank(),
+              axis.title = element_text(size = 10, face = NULL),
+              axis.text.y = element_text(size = 10),
+              strip.text.x = element_blank(),
+            )
+      
+        
+        # read_plot <- read_plot + labs(fill = "Sample category")
+        # read_plot <- read_plot + xlab("Samples")
+        read_plot <- read_plot + ylab("Reads")
+        
+        read_plot
+        
+        if(input$b1_include_read == TRUE){
+          bubble_plot <- read_plot + bubble_plot + plot_layout(ncol = 1, heights = c(0.25,1))
+        } else {
+          bubble_plot
+        }
+      
     })
+    
+
+    
+    
     
     output$b1_table_out <- renderDataTable({
       if (input$b1_new_old == "New") {
@@ -2603,7 +2731,7 @@ server <- function(input, output, session) {
     
     
     # If sample labels are selected:
-    if (input$pcoa_sample_labels == TRUE){
+    if (input$uni_pcoa_sample_labels == TRUE){
       pcoa_plot <- pcoa_plot +
         geom_text(aes(label = SampleName))
     }
