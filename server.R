@@ -37,6 +37,8 @@ server <- function(input, output, session) {
     meta_colnames <- c(colnames(meta_datafile), "TaxaName")
     meta_colnames <- meta_colnames[meta_colnames != "SampleName"]
     
+    updateCheckboxInput(session, "remove_low_reads")
+    
     ## Update the selections - read plot
     updateSelectInput(session, "read_sortby_axis", choices = meta_colnames)
     updateSelectInput(session, "read_meta_group", choices = meta_colnames)
@@ -97,9 +99,52 @@ server <- function(input, output, session) {
   })
   
   
-  
-  ####  Upload tab ####
-  {
+  #####  Upload tab #####
+  { 
+    
+    ## Test files uploaded ## 
+    
+    # ## This covers the option to load a test dataset. When the button pressed, the main table and metadata table is loaded in place
+    # observeEvent(input$test_data, {
+    # 
+    #   main_datafile_og <- reactive({
+    #     read.table(
+    #       file = "data/test_ASV.txt",
+    #       fill = TRUE,
+    #       header = TRUE,
+    #       sep = "\t"
+    #     )
+    #   })
+    #   
+    #   output$main_table <- renderDataTable({
+    #     read.table(
+    #       file = "data/test_ASV.txt",
+    #       fill = TRUE,
+    #       header = TRUE,
+    #       sep = "\t"
+    #     )
+    #   })
+    #   
+    #   meta_datafile <- reactive({
+    #     read.table(
+    #       file = "data/test_metadata.txt",
+    #       fill = TRUE,
+    #       header = TRUE,
+    #       sep = "\t"
+    #     )
+    #   })
+    #   
+    #   output$meta_table <- renderDataTable({
+    #     read.table(
+    #       file = "data/test_metadata.txt",
+    #       fill = TRUE,
+    #       header = TRUE,
+    #       sep = "\t"
+    #     )
+    #   })
+    #   
+    # })
+    
     ## Main ASV table
     output$main_table <- renderDataTable({
       req(input$main_file)
@@ -151,7 +196,7 @@ server <- function(input, output, session) {
     
     ## Filter the ASV table based on the present samples in the metadata table
     main_datafile <- reactive({
-      req(input$main_file)
+      # req(input$main_file)
       main_data_table <- main_datafile_og()
       meta_data_table <- meta_datafile()
       meta_names <-
@@ -244,12 +289,13 @@ server <- function(input, output, session) {
         }
       }
     }
+
     data_tran
   })
   
   
   
-  #### Transformed tables (processing tab) ####
+  ##### Transformed tables (processing tab) #####
   ## This needs to be changed to be only activated once, then again by any subsequent
   
   data_tran_contam_filt_react <- reactive({
@@ -283,14 +329,14 @@ server <- function(input, output, session) {
     
     data_tran
   })
+
   
   output$proc_new_data <- renderDataTable({
     data_tran <- data_tran_contam_filt_react()
     output$proc_new_text <- renderText("This is your new dataframe")
     data_tran
   })
-  
-  
+
   
   data_long_react <- reactive({
     data_tran <- data_tran_contam_filt_react()
@@ -375,6 +421,11 @@ server <- function(input, output, session) {
     # Replace any NAs with zeros
     filtered_table[is.na(filtered_table)] <- 0
     
+    if (input$remove_low_reads == TRUE){
+      filtered_table[filtered_table < input$read_threshold] <- 0
+      filtered_table
+    }
+    
     ## Convert table into % abundance
     data_prop <- filtered_table / colSums(filtered_table)
     # data_prop <- prop.table(as.matrix(filtered_table), 2) * 100
@@ -414,7 +465,6 @@ server <- function(input, output, session) {
     output$proc_alttext <- renderText("This is your processed data")
     data_long
   })
-  
   
   #### New Bubble table generation ####
   data_unfiltered_table <- reactive({
@@ -506,6 +556,11 @@ server <- function(input, output, session) {
         "Feature.ID")
     filtered_table <-
       unfiltered_table[,!(names(unfiltered_table) %in% cols_to_filter)]
+    
+    if (input$remove_low_reads == TRUE){
+      filtered_table[filtered_table < input$read_threshold] <- 0
+      filtered_table
+    }
     
     filtered_table
   })
@@ -769,7 +824,7 @@ server <- function(input, output, session) {
   
   
   #### Bar Plot ####
-    data_long_bar_filt_re <- reactive({
+      data_long_bar_filt_re <- reactive({
       filtered_table <- data_filtered_table()
       bar_data_prop <- data_filtered_table()
       meta_data_table <- meta_datafile()
@@ -1147,7 +1202,7 @@ server <- function(input, output, session) {
     }
   )
   
-  #### New bubble plot ####
+  #### Bubble plot - data transform ####
     data_bubble_reactive_new <- reactive({
       data_tran <- data_tran_react()
       meta_data_table <- meta_datafile()
@@ -1167,7 +1222,8 @@ server <- function(input, output, session) {
       ## These columns must be removed first.
       B2_data_prop <- B2_data_prop[, colSums(is.na(B2_data_prop)) == 0]
       
-      ## This checks all columns for a value above a threshold and keeps all rows if found. However, this screws up downstream metadata filtering, so I need to figure out how to change this. During the metadata step, any samples without representation in the metadata table will be removed. If those removed samples contained reads above a threshold, the remaining samples will stay in the filtered table (and they should not).
+      
+      ## This checks each column for values > than the selected threshold. If found, all values in the row are kept, regardless of threshold.
       B2_data_prop <- B2_data_prop %>% filter_all(any_vars(. >= as.numeric(input$b1_ab_thresh)))
       
       ## Reassigns taxonomy to the filtered table
@@ -1245,9 +1301,15 @@ server <- function(input, output, session) {
       ## Apply the labels to the new proportion table:
       B2_data_prop$TaxaName <- B2_labels$labels
       rownames(B2_data_prop) <- B2_data_prop$TaxaName
+      B2_data_prop
+    })
       
       
       ## Transform into long form:
+    data_data_long_re <- reactive({
+      B2_data_prop <- data_bubble_reactive_new()
+      meta_data_table <- meta_datafile()
+      unfiltered_table <- data_unfiltered_table()
       B2_data_long <-
         reshape2::melt(
           B2_data_prop,
@@ -1356,7 +1418,7 @@ server <- function(input, output, session) {
       data_long_bubble
     })
     
-    #### Old bubble plot ####
+    #### Bubble plot - old style ####
     data_bubble_reactive_old <- reactive({
       data_long <- data_long_react()
       meta_data_table <- meta_datafile()
@@ -1440,14 +1502,19 @@ server <- function(input, output, session) {
     })
     
     
-    #### Generate the bubble plot ####
+    #### Bubble plot - base plot ####
     observeEvent(input$bubble_start, {
     bubble_plot_re <- reactive({
-      if (input$b1_new_old == "Old") {
-        data_long_bubble <- data_bubble_reactive_old()
-      } else {
-        data_long_bubble <- data_bubble_reactive_new()
-      }
+      
+      ## No longer working since I changed how the proportion tables were generated.
+      
+      # if (input$b1_new_old == "Old") {
+      #   data_long_bubble <- data_bubble_reactive_old()
+      # } else {
+      #   data_long_bubble <- data_bubble_reactive_new()
+      # }
+      
+    data_long_bubble <- data_data_long_re()
       
       ## Plot the Data:
       bubble_plot <- ggplot(
@@ -1474,7 +1541,8 @@ server <- function(input, output, session) {
         rowsep = (1:100),
         sepwidth = c(5, 1)
       ) +
-        guides(fill = FALSE, colour = FALSE)
+        guides(fill = FALSE, colour = FALSE)+
+        labs(size = "Relative abundance")
       
       ## Sorting the y-axis and faceting options. I need to overhaul this to use three levels of nested faceting
       ## So for some reason you need to use the * operators instead of the + for faceting. Not sure why this changed. 
@@ -1750,6 +1818,7 @@ server <- function(input, output, session) {
             axis.line = element_blank(),
             #strip.background.y = element_rect(fill = "white"),
             panel.spacing = unit(as.numeric(input$b1_panel_spacing), "points"),
+            legend.position = "bottom",
             #panel.grid = element_line(colour = "grey"),
             #axis.line.y = element_line(colour="black",size=0.5),
             #panel.border = element_blank(),
@@ -1758,7 +1827,9 @@ server <- function(input, output, session) {
               angle = 90,
               vjust = 0.5,
               hjust = 1
-            )
+            ),
+            plot.margin=unit(c(-0.30,0,0,0), "null")
+
             #legend.position = "none")
           )
       }
@@ -1770,6 +1841,7 @@ server <- function(input, output, session) {
             axis.text = element_text(colour = "black", size = 10),
             #strip.background.y = element_rect(fill = "white"),
             panel.spacing = unit(as.numeric(input$b1_panel_spacing), "points"),
+            legend.position = "bottom",
             #panel.grid = element_line(colour = "grey"),
             #axis.line.y = element_line(colour="black",size=0.5),
             panel.border = element_blank(),
@@ -1778,16 +1850,19 @@ server <- function(input, output, session) {
               angle = 90,
               vjust = 0.5,
               hjust = 1
-            )
+            ),
+            plot.margin=unit(c(-0.30,0,0,0), "null")
             #legend.position = "none")
           )
       }
+      
+      
       
       bubble_plot
       
       
       
-      ## Now add an optional read plot
+      #### Bubble plot - sample reads ####
         filtered_table <- data_filtered_table()
         meta_data_table <- meta_datafile()
         
@@ -1841,8 +1916,9 @@ server <- function(input, output, session) {
           
         
         ## setting the graph so that it begins at the x-axis and there is no gap. Also sets the limits of the y-axis.
-        read_plot <- read_plot + scale_y_continuous(expand = c(0, 0),
-                                                    limit = (c(0, max(data_read_total$Total + 10000))))
+        # read_plot <- read_plot + scale_y_continuous(expand = c(0, 0),
+        #                                             limit = (c(0, max(data_read_total$Total + 10000))))
+          read_plot <- read_plot + scale_y_log10()
         
         ## Add faceting for sorting, requires to work alongside the multiple faceting options in the bubble plot. 
         # If second-level faceting:
@@ -1894,6 +1970,7 @@ server <- function(input, output, session) {
               axis.title = element_text(size = 10, face = NULL),
               axis.text.y = element_text(size = 10),
               strip.text.x = element_blank(),
+              plot.margin=unit(c(-0.30,0,0,0), "null")
             )
       
         
@@ -1903,17 +1980,157 @@ server <- function(input, output, session) {
         
         read_plot
         
-        if(input$b1_include_read == TRUE){
-          bubble_plot <- read_plot + bubble_plot + plot_layout(ncol = 1, heights = c(0.25,1))
-        } else {
+        
+        #### Bubble plot - taxa proportions ####
+        if (input$b1_include_taxa == TRUE){
+
+        # row sums for taxonomy read plot
+        B2_data_prop <- data_bubble_reactive_new()
+        
+        taxonomy_read_data <- data_read
+        taxonomy_read_data$Total <- rowSums(taxonomy_read_data)
+        
+        # Total number of reads in taxonomy read data
+        taxonomy_read_total <- sum(taxonomy_read_data$Total)
+        
+        #Assign taxonomy to last column, remove total column
+        taxonomy_read_data$Taxonomy <- rownames(taxonomy_read_data)
+        # taxonomy_read_data <- subset(taxonomy_read_data, select = -Total)
+        
+        #B2_prop table used as a template to put read count data back in. Use the rownames to do this.
+        taxonomy_read_filtered <- subset(B2_data_prop, select = - TaxaName)
+        
+        # Add RowNames column for replacing data
+        taxonomy_read_filtered$TaxaName <- rownames(taxonomy_read_filtered)
+        # taxonomy_read_data$RowNames <- rownames(taxonomy_read_data)
+        
+        #Now delete all data in the final file except for the row names, and left join with the read data file
+        taxonomy_read_filtered <- subset(taxonomy_read_filtered, select = Taxonomy)
+        taxonomy_read_filtered$TaxaName <- rownames(taxonomy_read_filtered)
+        taxonomy_read_filtered <- left_join(taxonomy_read_filtered,taxonomy_read_data, by = "Taxonomy")
+        
+        #Set row names
+        rownames(taxonomy_read_filtered) <- taxonomy_read_filtered$Taxonomy
+        # taxonomy_read_final <- subset(taxonomy_read_final, select = -RowNames)
+        
+        #Now parse the taxonomy and add a total and proportion
+        taxonomy_read_filtered$Sep <- taxonomy_read_filtered$Taxonomy
+        taxonomy_read_filtered$Sep <- gsub("(d__)", "", taxonomy_read_filtered$Sep)
+        taxonomy_read_filtered$Sep <- gsub("(p__)", "", taxonomy_read_filtered$Sep)
+        taxonomy_read_filtered$Sep <- gsub("(c__)", "", taxonomy_read_filtered$Sep)
+        taxonomy_read_filtered$Sep <- gsub("(o__)", "", taxonomy_read_filtered$Sep)
+        taxonomy_read_filtered$Sep <- gsub("(f__)", "", taxonomy_read_filtered$Sep)
+        taxonomy_read_filtered$Sep <- gsub("(g__)", "", taxonomy_read_filtered$Sep)
+        taxonomy_read_filtered$Sep <- gsub("(s__)", "", taxonomy_read_filtered$Sep)
+        taxonomy_read_filtered <-
+          separate(
+            taxonomy_read_filtered,
+            Sep,
+            c(
+              "Domain",
+              "Phylum",
+              "Class",
+              "Order",
+              "Family",
+              "Genus",
+              "Species"
+            ),
+            sep = ";",
+            remove = TRUE,
+            convert = FALSE
+          )
+        
+
+        # Set your chosen taxonomic level and parse the data, then set the column names
+        taxonomy_read_final = taxonomy_read_filtered %>% distinct(taxonomy_read_filtered$TaxaName,
+                                                                  taxonomy_read_filtered$Total,
+                                                                  eval(parse(text = paste("taxonomy_read_filtered$",input$b1_tax_sort))))
+        colnames(taxonomy_read_final) = c("TaxaName","Total","taxonomic_level")
+
+        ## Generate a proportion of reads by dividing the read number in each row by the total number of reads.
+        taxonomy_read_final$Prop = taxonomy_read_final$Total / taxonomy_read_total * 100
+        
+        ## The faceting does not properly align the proportions; they are reversed. So you have to reoder them manually.
+        taxa_readplot = ggplot(data = taxonomy_read_final, aes(x =  reorder(TaxaName, desc(TaxaName)), y = Prop))
+        
+        ## Define the geom_bar work space and modify the visuals. Modify the position variable to change between a standard and stacked bar plot.
+        taxa_readplot <- taxa_readplot + geom_bar(aes(),
+                                                  position = position_dodge2(),
+                                                  #position = position_dodge2(preserve = "single"),
+                                                  #position = position_stack(reverse = TRUE),
+                                                  stat="identity",
+                                                  colour="black",
+                                                  size=0.6,
+                                                  alpha=0.7,
+                                                  width = 0.9,
+        ) + scale_fill_manual(values = "grey")
+        
+        # Flip the bar chart so it is aligned vertically
+        taxa_readplot <- taxa_readplot + coord_flip()
+        
+        
+        # taxa_readplot <- taxa_readplot + facet_nested(eval(parse(text = input$b1_tax_sort))~., scales = "free", space = "free")
+        taxa_readplot <- taxa_readplot + facet_nested(taxonomic_level~., scales = "free", space = "free")
+        
+        
+        ## Modify the general visual theme (i.e., background, legends, axis titles).
+        taxa_readplot <- taxa_readplot + theme_bw() + theme(
+          panel.grid = element_blank(),
+          text = element_text(colour = "black"),
+          panel.background = element_blank(),
+          axis.line = element_line(colour = "black",size=0),
+          axis.line.x.bottom = element_line(size=-0),
+          axis.text = element_text(colour = "black",size=12),
+          axis.text.x = element_text(angle = 60, hjust =1.4, vjust=1.2,size=12,face = "plain"),
+          legend.text = element_text(face = "plain",size = 16),
+          legend.title = element_text(size=16),
+          legend.position = "none",
+          axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          strip.text.x = element_text(size=10,face="bold"),
+          panel.spacing = unit(0, "lines"),
+          panel.border = element_rect(colour="black",size=0,fill=NA),
+          axis.ticks = element_line(colour = "black"),
+          axis.ticks.y = element_blank(),
+          #panel.grid.major.y = element_line(colour = "black"),
+          axis.line.y = element_line(colour="black"),
+          strip.text.y = element_blank(),
+          plot.margin=unit(c(-0.30,0,0,0), "null")
+        )
+        
+        taxa_readplot
+        }
+        
+        
+        #### Bubble plot - final patchwork ####
+
+        # If both the read plot and taxa proportion bar plots are selected:
+        if(input$b1_include_read == TRUE && input$b1_include_taxa){
+          layout <- "
+                AA##
+                BBCC
+                    "
+          bubble_plot <- read_plot / bubble_plot + taxa_readplot + plot_layout(design = layout, heights = c(0.25,1,0.10), widths = c(0.25,1,0.01))
           bubble_plot
         }
-      
+        
+        # If only the read plot is selected
+        else if(input$b1_include_read == TRUE){
+          bubble_plot <- read_plot + bubble_plot + plot_layout(ncol = 1, heights = c(0.1,1))
+          bubble_plot
+        }
+        
+        # If only the taxa proportion plot is selected
+        else if(input$b1_include_taxa == TRUE){
+          bubble_plot <- bubble_plot + taxa_readplot + plot_layout(nrow = 1, heights = c(0.10,1))
+          bubble_plot
+        }
+        
+        bubble_plot
+        
     })
     
 
-    
-    
     
     output$b1_table_out <- renderDataTable({
       if (input$b1_new_old == "New") {
@@ -2115,13 +2332,17 @@ server <- function(input, output, session) {
       pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$r)
       pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$pvals)
       colnames(pcoa_envfit_df) <- c("axis1", "axis2", "R", "pvalue")
+      pcoa_envfit_df
       
-      # # Filter below a specified threshold (p-value?). Need to look more into what these axis values represent.
-      # pcoa_envfit_df = filter(pcoa_envfit_df, pcoa_envfit_df$R < 0.5)
+    })
+    
+    # # Filter below a specified threshold (p-value?). Need to look more into what these axis values represent.
+    # pcoa_envfit_df = filter(pcoa_envfit_df, pcoa_envfit_df$R < 0.5)
+    pcoa_envfit_df_filt_re <- reactive({
+      pcoa_envfit_df <- pcoa_envfit_react()
       pcoa_envfit_df_filt <- filter(pcoa_envfit_df,
-                                   pcoa_envfit_df$pvalue < input$pcoa_env_thresh)
+                                    pcoa_envfit_df$pvalue < input$pcoa_env_thresh)
       pcoa_envfit_df_filt
-      
     })
     
     pcoa_plot_taxa_fit_react <- reactive({
@@ -2159,14 +2380,13 @@ server <- function(input, output, session) {
         ) # Filter taxonomy abundance based on a threshold
       taxon_weighted_scores
       
-      
     })
     
     pcoa_plot_react <- reactive({
       ## I need to modify this so if the dataframe is empty it doesn't include the environmental fit data
       pcoa_df <- pcoa_coords_react()
       meta_data_table <- meta_datafile()
-      pcoa_envfit_df_filt <- pcoa_envfit_react()
+      pcoa_envfit_df_filt <- pcoa_envfit_df_filt_re()
       eigen_df <- pcoa_eigen_react()
       taxon_weighted_scores <- pcoa_plot_taxa_fit_react()
       
@@ -2216,7 +2436,7 @@ server <- function(input, output, session) {
           ),
           fill = input$pcoa_fill_col,
           colour = input$pcoa_fill_col,
-          shape = input$pcoa_shape
+          shape = input$pcoa_shape,
         ) +
         # scale_shape_manual(values = available_shapes, name = paste("Data",eval(parse(text = input$pcoa_shape)),sep = "")) +
         # scale_fill_manual(values = available_fill, name =  paste("Data2",eval(parse(text = input$pcoa_fill_col)),sep = "")) +
@@ -2307,12 +2527,33 @@ server <- function(input, output, session) {
       
       # Do you want to include an ellipsis around your data points?:
       if (input$pcoa_elips == TRUE) {
+        
+        # pcoa_stats <- merged_df %>%
+        #   group_by(input$pcoa_fill_col) %>%
+        #   summarize(
+        #     pcoa_mean_x <- mean(PCoA1),
+        #     pcoa_mean_y <- mean(PCoA2),
+        #     pcoa_sd_x <- sd(PCoA1),
+        #     pcoa_sd_y <- sd(PCoA2),
+        #     pcoa_correlation <= cor(PCoA1,PCoA2)
+        #   )
+        
+        # 
+        # pcoa_correlation <- merged_df %>% 
+        #   group_by(get(input$pcoa_fill_col)) %>%
+        #   summarize(correlation = cor(PCoA1, PCoA2))
+        
         pcoa_plot <-
           pcoa_plot + stat_ellipse(aes(color = get(input$pcoa_fill_col)),
                                    show.legend = FALSE)
+          # geom_text(data = pcoa_correlation, 
+          #           aes(label = paste("Corr:", round(pcoa_correlation, 2))),
+          #           vjust = -1.5, hjust = 1.5, size = 3)
+          
+          
+
+
       }
-      
-      
       
       # Taxon points
       
@@ -2327,7 +2568,7 @@ server <- function(input, output, session) {
           colour = "black",
           show.legend = TRUE
         ) +
-          labs(size = "Abundance")
+          labs(size = "Relative abundance")
       }
       
       if (dim(taxon_weighted_scores)[1] != 0) {
@@ -2377,6 +2618,29 @@ server <- function(input, output, session) {
       # Plot PCoA
       pcoa_plot
     })
+    
+    ## Add options to download the important data sheets for manual stats calculations
+    output$pcoa_envfit_table <- downloadHandler(
+      filename = "pcoa_envfit_table.csv",
+      content = function(pcoa_envfit_table) {
+        write.csv(pcoa_envfit_react(), pcoa_envfit_table)
+      }
+    )
+    
+    output$pcoa_envfit_filt_table <- downloadHandler(
+      filename = "pcoa_envfit_filt_table.csv",
+      content = function(pcoa_envfit_filt_table) {
+        write.csv(pcoa_envfit_df_filt_re(), pcoa_envfit_filt_table)
+      }
+    )
+    # 
+    # output$pcoa_merged_df <- downloadHandler(
+    #   filename = "pcoa_merged_stats.tsv",
+    #   content = function(pcoa_merged_df) {
+    #     write.csv(pcoa_envfit_df_filt_re(), pcoa_envfit_filt_table)
+    #   }
+    # )
+    
     
     
     ## Adjusting the PCoA image and saving

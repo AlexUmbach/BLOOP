@@ -190,6 +190,7 @@ ui <- navbarPage(id = "navbarID",
         tabPanel("Upload data",
                  sidebarLayout(
                    sidebarPanel(h5("Please upload your data"),
+                                actionButton("test_data", "Use test data"),
                                 fileInput("main_file","Primary ASV table"),
                                 checkboxInput("is_main_collapsed","Is this a collapsed table?",value = FALSE),
                                 #radioButtons("main_filetype","Please select your filetype",c("tsv","csv","txt")),
@@ -233,6 +234,13 @@ ui <- navbarPage(id = "navbarID",
                                 radioButtons("remove_prefix","Do you want to remove prefixes?",c("Yes","No"),selected = "Yes", inline = TRUE),
                                 radioButtons("truncate_taxa","Do you want to truncate taxa to the most resolved taxon?",c("Yes","No"), selected = "Yes",inline = TRUE),
                                 radioButtons("contam_filter","Do you want to remove or analyze contaminants?", c("Remove","Analyze","No action"),selected = "No action",inline = TRUE),
+                                checkboxInput("remove_low_reads","Do you want to remove low abundance reads?", value = FALSE),
+                                
+                                conditionalPanel(
+                                  condition = "input.remove_low_reads == true",
+                                  numericInput("read_threshold","Set a threshold",value = 100),
+                                ),
+
                                 width = 3,
                                 style = "overflow-y:scroll; max-height: 900px; position:relative;border-color:#000000"
                    ),
@@ -373,6 +381,7 @@ ui <- navbarPage(id = "navbarID",
                                 selectInput("b1_sort_param","How do you want to group samples (i.e., faceting)?", choices = "Updating"),
                                 selectInput("b1_color_param","How do you want to colour your bubbles?", choices = "Updating"),
                                 checkboxInput("b1_include_read","Do you want to include sample counts in a read plot?", FALSE),
+                                checkboxInput("b1_include_taxa", "Do you want to include taxon read proportions?", FALSE),
                                 checkboxInput("b1_second_facet", "Do you want a second facet?", FALSE),
                                 #radioButtons("b1_second_facet","Do you want to group by a second category?",choices = c("Yes","No"), selected = "No", inline = TRUE),
                                 
@@ -465,6 +474,9 @@ ui <- navbarPage(id = "navbarID",
                                  
                                  sliderInput("pcoa_plot_outw","Plot width",min = 0, max = 3000,step = 100,value = 1000),
                                  sliderInput("pcoa_plot_outh","Plot height",min = 0, max = 3000,step = 100,value = 600),
+                                 # downloadButton("pcoa_merged_df","Download pcoa data"),
+                                 downloadButton("pcoa_envfit_table","Download triplot stats table"),
+                                 downloadButton("pcoa_envfit_filt_table", "Download triplot filtered stats table"),
                                  downloadButton("pcoa_download","Save figure"),
                                  width = 3
                                )
