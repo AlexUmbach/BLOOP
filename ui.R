@@ -25,6 +25,7 @@ library(ggh4x)
 # library(msa); removed because no reason to exist right now
 library(shinyjs)
 library(patchwork)
+library(viridis)
 
 
 ## Set working directory. This should be the directory where app.R is stored. 
@@ -447,6 +448,8 @@ ui <- navbarPage(id = "navbarID",
                                 numericInput("pcoa_taxa_thresh", "Select your taxon abundance (0 - 100)", min = 0, max = 100, value = 5),
                                 selectInput("pcoa_fill_col","Select your fill colour",choices = "Updating"),
                                 sliderInput("pcoa_size_select", "Change your point size", value = 5,min = 0, max = 15),
+                                checkboxInput("pcoa_gradient", "Do you want a colour gradient instead?", value = FALSE),
+                                selectInput("pcoa_pallet_selection","Select a specific colour pallet", choices = c("viridis","magma","plasma","inferno","cividis","mako","rocket","turbo")),
                                 checkboxInput("pcoa_sample_labels", "Do you want to label your samples?", value = FALSE),
                                 checkboxInput("shape_choice","Do you want to add a shape variable?",value = FALSE),
                                 

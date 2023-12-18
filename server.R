@@ -70,6 +70,8 @@ server <- function(input, output, session) {
     updateSelectInput(session, "pcoa_fill_col", choices = meta_colnames)
     updateSelectInput(session, "pcoa_elips_col", choices = meta_colnames)
     updateSelectInput(session, "pcoa_shape", choices = meta_colnames)
+    updateSelectInput(session, "pcoa_pallet_selection")
+    updateSelectInput(session, "pcoa_gradient")
     
     ## Update selection - Ranked
     updateSelectInput(session, "ranked_sort_param", choices = meta_colnames)
@@ -2400,6 +2402,7 @@ server <- function(input, output, session) {
         merged_df %>% mutate_if(!names(.) %in% c("PCoA1", "PCoA2"), factor)
       
       # Define the available shapes and colors
+      # I need to add the option to include a gradient
       available_shapes <- c(21, 22, 23, 24, 14, 13:1)
       available_colors <- 2:27
       available_fill <- 2:27
@@ -2409,14 +2412,14 @@ server <- function(input, output, session) {
       pcoa_plot <- ggplot(merged_df, aes(x = PCoA1, y = PCoA2)) +
         # geom_point(size = 4, aes(shape = eval(parse(text = )), fill = get(input$pcoa_fill_col))) +
       
-        geom_point(size = input$pcoa_size_select, aes(
+          geom_point(size = input$pcoa_size_select, aes(
           # shape = eval(parse(text = paste("merged_df$",input$pcoa_shape))),
           # colour = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))),
           # fill = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))))) +
           shape = get(input$pcoa_shape),
           colour = get(input$pcoa_fill_col),
-          fill = get(input$pcoa_fill_col)
-        )) +
+          fill = get(input$pcoa_fill_col))) + 
+            
         # (eval(parse(text=paste("data_long_bubble$",input$b1_meta_group)))))
         # geom_point(size = 4, aes(shape = get(input$pcoa_shape), fill = get(input$pcoa_fill_col))) +
         labs(
@@ -2441,9 +2444,16 @@ server <- function(input, output, session) {
         # scale_shape_manual(values = available_shapes, name = paste("Data",eval(parse(text = input$pcoa_shape)),sep = "")) +
         # scale_fill_manual(values = available_fill, name =  paste("Data2",eval(parse(text = input$pcoa_fill_col)),sep = "")) +
         # scale_color_manual(values = available_colors, name = "colour", guide = "none")
-        scale_shape_manual(values = available_shapes) +
-        scale_fill_manual(values = available_fill) +
-        scale_colour_manual(values = available_fill)
+        scale_shape_manual(values = available_shapes)
+      
+      if (input$pcoa_gradient == TRUE){
+        pcoa_plot <- pcoa_plot + scale_colour_viridis(option = input$pcoa_pallet_selection,discrete = TRUE)
+        pcoa_plot <- pcoa_plot + scale_fill_viridis(option = input$pcoa_pallet_selection,discrete = TRUE)
+      } else {
+        pcoa_plot <- pcoa_plot + scale_fill_manual(values = available_fill) +
+          scale_colour_manual(values = available_fill)
+      }
+      
       # scale_colour_manual(values = available_colors, name = "colour", guide = "none")
         }
       
@@ -2453,7 +2463,6 @@ server <- function(input, output, session) {
         
         pcoa_colour_name <- input$pcoa_fill_col
         
-        
         pcoa_plot <- ggplot(merged_df, aes(x = PCoA1, y = PCoA2)) +
           # geom_point(size = 4, aes(shape = eval(parse(text = )), fill = get(input$pcoa_fill_col))) +
               geom_point(size = input$pcoa_size_select, aes(
@@ -2462,7 +2471,8 @@ server <- function(input, output, session) {
               # fill = eval(parse(text = paste("merged_df$",input$pcoa_fill_col))))) +
               colour = get(input$pcoa_fill_col),
               fill = get(input$pcoa_fill_col)
-            )) +
+              )) +
+
               # (eval(parse(text=paste("data_long_bubble$",input$b1_meta_group)))))
               # geom_point(size = 4, aes(shape = get(input$pcoa_shape), fill = get(input$pcoa_fill_col))) +
               labs(
@@ -2483,14 +2493,26 @@ server <- function(input, output, session) {
                 # figuring out labeling took way too long, but you don't actually need to do anything more than use the input. 
                 fill = input$pcoa_fill_col,
                 colour = input$pcoa_fill_col
-              ) +
+              )
               # scale_shape_manual(values = available_shapes, name = paste("Data",eval(parse(text = input$pcoa_shape)),sep = "")) +
               # scale_fill_manual(values = available_fill, name =  paste("Data2",eval(parse(text = input$pcoa_fill_col)),sep = "")) +
               # scale_color_manual(values = available_colors, name = "colour", guide = "none")
-              scale_fill_manual(values = available_fill) +
-              scale_colour_manual(values = available_fill)
+          
+          # if (input$pcoa_gradient == TRUE){
+          #   # scale_colour_gradient(low = "blue", high = "red", value = get(input$pcoa_fill_col))
+          #   # scale_fill_gradient(low = "blue", high = "red", value = get(input$pcoa_fill_col))
+          # } else {
+        
+        ## The option to include a colour gradient if you're dealing data that has some kind of clear succession (e.g., time, state)
+        if (input$pcoa_gradient == TRUE){
+          pcoa_plot <- pcoa_plot + scale_colour_viridis(option = input$pcoa_pallet_selection,discrete = TRUE)
+          pcoa_plot <- pcoa_plot + scale_fill_viridis(option = input$pcoa_pallet_selection,discrete = TRUE)
+        } else {
+          pcoa_plot <- pcoa_plot + scale_fill_manual(values = available_fill) +
+                          scale_colour_manual(values = available_fill)
+        }
+
       }
-      
       
       
       if (dim(pcoa_envfit_df_filt)[1] != 0) {
