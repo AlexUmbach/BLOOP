@@ -101,53 +101,129 @@ server <- function(input, output, session) {
   })
   
   
-  #####  Upload tab #####
-  { 
+  ######  Upload tab ######
     
-    ## Test files uploaded ## 
+    ## Test data upload. To accomplish this, I think I need to duplicate my code for the scenario in which the test button is pressed. 
+    # Function to load test data from app www/ directory
     
-    # ## This covers the option to load a test dataset. When the button pressed, the main table and metadata table is loaded in place
-    # observeEvent(input$test_data, {
-    # 
-    #   main_datafile_og <- reactive({
-    #     read.table(
-    #       file = "data/test_ASV.txt",
-    #       fill = TRUE,
-    #       header = TRUE,
-    #       sep = "\t"
-    #     )
-    #   })
-    #   
-    #   output$main_table <- renderDataTable({
-    #     read.table(
-    #       file = "data/test_ASV.txt",
-    #       fill = TRUE,
-    #       header = TRUE,
-    #       sep = "\t"
-    #     )
-    #   })
-    #   
-    #   meta_datafile <- reactive({
-    #     read.table(
-    #       file = "data/test_metadata.txt",
-    #       fill = TRUE,
-    #       header = TRUE,
-    #       sep = "\t"
-    #     )
-    #   })
-    #   
-    #   output$meta_table <- renderDataTable({
-    #     read.table(
-    #       file = "data/test_metadata.txt",
-    #       fill = TRUE,
-    #       header = TRUE,
-    #       sep = "\t"
-    #     )
-    #   })
-    #   
-    # })
+    ### Test data ###
+    ## Main ASV table
+    observeEvent(input$test_data,{
+      
+    main_datafile_upload <- reactive({
+      read.table(
+        file = "test_ASV.txt",
+        fill = TRUE,
+        header = TRUE,
+        sep = "\t"
+      )
+    })
+    
+    main_datafile_og <- reactive({
+      main_datafile = main_datafile_upload()
+      main_datafile[is.na(main_datafile)] <- 0
+      main_datafile
+    })
+    
+    output$main_table <- renderDataTable({
+      read.table(
+        file = "test_ASV.txt",
+        fill = TRUE,
+        header = TRUE,
+        sep = "\t"
+      )
+    })
+    
+    ## Metadata table
+    meta_datafile_og <- reactive({
+      read.table(
+        file = "test_metadata.txt",
+        fill = TRUE,
+        header = TRUE,
+        sep = "\t"
+      )
+    })
+    
+    output$meta_table <- renderDataTable({
+      read.table(
+        file = "test_metadata.txt",
+        fill = TRUE,
+        header = TRUE,
+        sep = "\t"
+      )
+    })
+    
+    ## Filter the ASV table based on the present samples in the metadata table
+    main_datafile <- reactive({
+      # req(input$main_file)
+      main_data_table <- main_datafile_og()
+      meta_data_table <- meta_datafile()
+      meta_names <-
+        c(
+          meta_data_table$SampleName,
+          "Consensus.Lineage",
+          "rowID",
+          "Feature.ID",
+          "ReprSequence"
+        )
+      main_data_table <-
+        main_data_table[, names(main_data_table) %in% meta_names]
+      main_data_table
+    })
+    
+    ## Filter the metadata table based on present samples in ASV table
+    meta_datafile <- reactive({
+      meta_data_table <- meta_datafile_og()
+      main_data_table <- main_datafile_og()
+      meta_names <-
+        c(
+          meta_data_table$SampleName,
+          "Consensus.Lineage",
+          "rowID",
+          "Feature.ID",
+          "ReprSequence"
+        )
+      main_data_table <-
+        main_data_table[, names(main_data_table) %in% meta_names]
+      meta_data_table <-
+        meta_data_table %>% filter(SampleName %in% colnames(main_data_table))
+      # meta_data_table$TaxaName <- 1:nrow(meta_data_table)
+      meta_data_table <-
+        replace(meta_data_table, is.na(meta_data_table), "NA")
+      meta_data_table
+    })
+    
+    
+    ## ASV contaminant table
+    output$contam_table <- renderDataTable({
+      read.table(
+        file = "test_contam.txt",
+        fill = TRUE,
+        header = TRUE,
+        sep = "\t"
+      )
+    })
+    
+    contam_datafile <- reactive({
+      read.table(
+        file = "test_contam.txt",
+        fill = TRUE,
+        header = TRUE,
+        sep = "\t"
+      )
+    })
+    
+    ## Show the original table that was uploaded
+    output$proc_main <- renderDataTable({
+      main_datafile <- main_datafile()
+      output$proc_maintext <- renderText("This is your original data")
+      # req(input$main_file)
+      main_datafile
+    })
+    })
     
     ## Main ASV table
+  {
     output$main_table <- renderDataTable({
       req(input$main_file)
       read.table(
@@ -171,6 +247,13 @@ server <- function(input, output, session) {
     main_datafile_og <- reactive({
       main_datafile = main_datafile_upload()
       main_datafile[is.na(main_datafile)] <- 0
+      main_datafile
+    })
+    
+    output$proc_main <- renderDataTable({
+      main_datafile <- main_datafile()
+      output$proc_maintext <- renderText("This is your original data")
+      # req(input$main_file)
       main_datafile
     })
     
@@ -273,7 +356,7 @@ server <- function(input, output, session) {
   #### Main table (Processing tab) #### I SHOULD REMOVE THIS FOR SIMPLICITY
   
   data_tran_react <- reactive({
-    req(input$main_file)
+    #req(input$main_file)
     data_tran <- main_datafile()
     
     ## Converting collapsed tables to ASV tables, and standardizing formatting, including adding rowID columns
@@ -472,8 +555,8 @@ server <- function(input, output, session) {
   data_unfiltered_table <- reactive({
     main_datafile <- main_datafile()
     data_tran <- data_tran_contam_filt_react()
-    req(input$main_file)
-    req(input$meta_file)
+    # req(input$main_file)
+    # req(input$meta_file)
     
     if (input$is_main_collapsed == TRUE) {
       labels <- data_tran$Consensus.Lineage
@@ -577,14 +660,6 @@ server <- function(input, output, session) {
   #### Total read plot ####
   
     # observeEvent
-  
-  giant_read_reactive <- reactive({
-    req(input$read_start)
-    # 
-    # if (!read_start_pressed()){
-    #   return(NULL)
-    # }
-    
     data_read_table <- reactive({
       filtered_table <- data_filtered_table()
       meta_data_table <- meta_datafile()
@@ -795,18 +870,8 @@ server <- function(input, output, session) {
     },
     width = read_plot_width,
     height = read_plot_height)
-    })# End of giant reactive
-  # End of if
-  
-  # #
-  # observeEvent(input$read_start, {
-  #   read_start_pressed(TRUE)
-  # })
-  
-  
-
     
-    
+  # Download output for read plot
   output$read_download = downloadHandler(
     filename = "read_plot.pdf",
     contentType = ".pdf",
@@ -1984,6 +2049,8 @@ server <- function(input, output, session) {
         
         
         #### Bubble plot - taxa proportions ####
+        ## Currently not working when filtering by taxa
+        
         if (input$b1_include_taxa == TRUE){
 
         # row sums for taxonomy read plot
@@ -2052,7 +2119,24 @@ server <- function(input, output, session) {
         ## Generate a proportion of reads by dividing the read number in each row by the total number of reads.
         taxonomy_read_final$Prop = taxonomy_read_final$Total / taxonomy_read_total * 100
         
-        ## The faceting does not properly align the proportions; they are reversed. So you have to reoder them manually.
+        ## Filter out specific taxonomy
+        # Set rownames into a new column
+        taxonomy_read_final$full_lineage <- rownames(taxonomy_read_final)
+        
+        if (is.na(input$b1_tax_keyword) == TRUE) {
+          warning("No specific taxon selected. Script will continue without filtering by taxa.")
+        } else {
+          taxon_hits <-
+            grepl(
+              pattern = input$b1_tax_keyword,
+              ignore.case = TRUE,
+              x = taxonomy_read_final$full_lineage
+            )
+          taxonomy_read_final <- taxonomy_read_final[taxon_hits, ]
+          warning("CONGRATULATIONS! Taxa filtering selected.")
+        }
+        
+        ## The faceting does not properly align the proportions; they are reversed. So you have to reorder them manually.
         taxa_readplot = ggplot(data = taxonomy_read_final, aes(x =  reorder(TaxaName, desc(TaxaName)), y = Prop))
         
         ## Define the geom_bar work space and modify the visuals. Modify the position variable to change between a standard and stacked bar plot.
@@ -2097,7 +2181,7 @@ server <- function(input, output, session) {
           #panel.grid.major.y = element_line(colour = "black"),
           axis.line.y = element_line(colour="black"),
           strip.text.y = element_blank(),
-          plot.margin=unit(c(-0.30,0,0,0), "null")
+          plot.margin=unit(c(0,0,0,0), "null")
         )
         
         taxa_readplot
@@ -2334,6 +2418,10 @@ server <- function(input, output, session) {
       pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$r)
       pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$pvals)
       colnames(pcoa_envfit_df) <- c("axis1", "axis2", "R", "pvalue")
+      pcoa_envfit_df$R <- round(pcoa_envfit_df$R, 2)
+      pcoa_envfit_df$pvalue <- round(pcoa_envfit_df$pvalue, 4)
+      # pcoa_envfit_df$pvaluecorr <- pcoa_envfit_df$pvalue*100
+      # colnames(pcoa_envfit_df) <- c("axis1", "axis2", "R", "pvalue","pcorrected")
       pcoa_envfit_df
       
     })
@@ -2446,6 +2534,7 @@ server <- function(input, output, session) {
         # scale_color_manual(values = available_colors, name = "colour", guide = "none")
         scale_shape_manual(values = available_shapes)
       
+      ## IF selected, allows you to colour based on a viridis gradient. Right now it requires rechecking the box to switch between gradients. I'll have to fix this in the future
       if (input$pcoa_gradient == TRUE){
         pcoa_plot <- pcoa_plot + scale_colour_viridis(option = input$pcoa_pallet_selection,discrete = TRUE)
         pcoa_plot <- pcoa_plot + scale_fill_viridis(option = input$pcoa_pallet_selection,discrete = TRUE)
@@ -2536,7 +2625,34 @@ server <- function(input, output, session) {
               y = pcoa_envfit_df_filt$axis2 / 2
             ),
             size = 4
+          ) +
+          geom_label(
+            data = pcoa_envfit_df_filt,
+            aes(
+              label = pvalue,
+              x = pcoa_envfit_df_filt$axis1 / 3,
+              y = pcoa_envfit_df_filt$axis2 / 3
+            )
+          ) +
+          geom_label(
+            data = pcoa_envfit_df_filt,
+            aes(
+              label = R,
+              x = pcoa_envfit_df_filt$axis1 / 3,
+              y = pcoa_envfit_df_filt$axis2 / 3
+            ),
+            hjust = 2
+          ) + 
+          geom_label(
+            data = pcoa_envfit_df_filt,
+            aes(
+              label = "Rvalue",
+              x = pcoa_envfit_df_filt$axis1 / 3,
+              y = pcoa_envfit_df_filt$axis2 / 3
+            ),
+            hjust = 3
           )
+          # + geom_label()
       }
       
       
