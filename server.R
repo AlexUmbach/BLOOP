@@ -1067,7 +1067,7 @@ server <- function(input, output, session) {
       data_long_bar_filt <- data_long_bar
       
       
-      ## Include only specific taxa  within the plot
+      ## Include only specific taxa within the plot
       if (is.na(input$taxon_subset) == TRUE) {
         warning("No specific taxon selected. Script will continue without filtering by taxa.")
       } else {
@@ -1370,7 +1370,21 @@ server <- function(input, output, session) {
       rownames(B2_data_prop) <- B2_data_prop$TaxaName
       B2_data_prop
     })
-      
+  
+  # #I need this for the metadata filtering for bubble plot, so the taxa proportion plot makes sense. It should only be triggered when metadata filtering is selected
+  # data_bubble_taxa_prop_re <- reactive({
+  #   if (is.na(input$b1_meta_keyword == FALSE)){
+  #   B2_data_prop <- data_bubble_reactive_new()
+  #     sample_hits <-grepl(
+  #         pattern = input$b1_meta_keyword,
+  #         ignore.case = TRUE,
+  #         x = (eval(parse(
+  #           text = paste("B2_data_prop$", input$b1_meta_group)
+  #         )))
+  #       )
+  #     data_long_bubble <- data_long_bubble[sample_hits, ]
+  # })
+    
       
       ## Transform into long form:
     data_data_long_re <- reactive({
@@ -1426,20 +1440,86 @@ server <- function(input, output, session) {
       
       
       
-      ## Include only specific taxa  within the plot
+      # ## Include only specific taxa  within the plot
+      # if (is.na(input$b1_tax_keyword) == TRUE) {
+      #   warning("No specific taxon selected. Script will continue without filtering by taxa.")
+      # } else {
+      #   taxon_hits <-
+      #     grepl(
+      #       pattern = paste(input$b1_tax_keyword),
+      #       ignore.case = TRUE,
+      #       x = data_long_bubble$Taxonomy
+      #     )
+      #   data_long_bubble <- data_long_bubble[taxon_hits, ]
+      #   warning("Taxa filtering selected.")
+      # }
+      
+      
+      ## New taxa filtering
       if (is.na(input$b1_tax_keyword) == TRUE) {
         warning("No specific taxon selected. Script will continue without filtering by taxa.")
       } else {
-        taxon_hits <-
-          grepl(
-            pattern = paste(input$b1_tax_keyword),
-            ignore.case = TRUE,
-            x = data_long_bubble$Taxonomy
-          )
+        # Split the input$b1_tax_keyword into a list of keywords using ","
+        tax_keywords <- strsplit(input$b1_tax_keyword, ",")[[1]]
+        
+        # Create a pattern by pasting the keywords with "|" for OR condition
+        pattern <- paste(tax_keywords, collapse = "|")
+        
+        # Perform pattern matching using grepl
+        taxon_hits <- grepl(
+          pattern = pattern,
+          ignore.case = TRUE,
+          x = data_long_bubble$Taxonomy
+        )
+        
+        # Subset the data_long_bubble dataset based on taxon_hits
         data_long_bubble <- data_long_bubble[taxon_hits, ]
+        
+        # Display a warning message indicating taxa filtering is selected
         warning("Taxa filtering selected.")
       }
       
+      
+      if (is.na(input$b1_meta_group)) {
+        warning("No metadata category selected. Script will continue without filtering by groups.")
+      } else {
+        # Split the input$b1_meta_keyword into a list of keywords using ","
+        meta_keywords <- strsplit(input$b1_meta_keyword, ",")[[1]]
+        
+        # Create a pattern by pasting the keywords with "|" for OR condition
+        pattern <- paste(meta_keywords, collapse = "|")
+        
+        # Use any() to check if any keyword matches in the metadata group
+        sample_hits <- sapply(data_long_bubble[, input$b1_meta_group], function(group_value) {
+          any(grepl(pattern, group_value, ignore.case = TRUE))
+        })
+        
+        # Subset the data_long_bubble dataset based on sample_hits
+        data_long_bubble <- data_long_bubble[sample_hits, ]
+        
+        # Display a warning message indicating metadata filtering is selected
+        warning("Metadata filtering selected.")
+      }
+      # 
+      # 
+      # 
+      # ## Include only specific sample groups within the plot:
+      # if (is.na(input$b1_meta_group) == TRUE) {
+      #   warning(
+      #     "No metadata category selected. Script will continue without filtering by groups."
+      #   )
+      # } else {
+      #   sample_hits <-
+      #     grepl(
+      #       pattern = input$b1_meta_keyword,
+      #       ignore.case = TRUE,
+      #       x = (eval(parse(
+      #         text = paste("data_long_bubble$", input$b1_meta_group)
+      #       )))
+      #     )
+      #   data_long_bubble <- data_long_bubble[sample_hits, ]
+      #   warning("Metadata filtering selected.")
+      # }
    
       ## Attach full taxonomic lineage and separate into classifications, and fix labelling issues:
       data_long_bubble$Sep <- data_long_bubble$Taxonomy
@@ -1485,88 +1565,88 @@ server <- function(input, output, session) {
       data_long_bubble
     })
     
-    #### Bubble plot - old style ####
-    data_bubble_reactive_old <- reactive({
-      data_long <- data_long_react()
-      meta_data_table <- meta_datafile()
-      
-      
-      ## Filter above a threshold, append metadata, and round decimals
-      data_long_bubble <- data_long
-      data_long_bubble <-
-        dplyr::filter(data_long, Percentage > as.numeric(input$b1_ab_thresh))
-      data_long_bubble <-
-        left_join(data_long_bubble,
-                  meta_data_table,
-                  by = "SampleName",
-                  copy = TRUE)
-      data_long_bubble$Percentage <-
-        round(data_long_bubble$Percentage,
-              digits = as.numeric(input$b1_num_dec))
-      
-      
-      ## Include only specific taxa  within the plot
-      if (is.na(input$b1_tax_keyword) == TRUE) {
-        warning("No specific taxon selected. Script will continue without filtering by taxa.")
-      } else {
-        taxon_hits <-
-          grepl(
-            pattern = input$b1_tax_keyword,
-            ignore.case = TRUE,
-            x = data_long_bubble$Taxonomy
-          )
-        data_long_bubble <- data_long_bubble[taxon_hits, ]
-        warning("CONGRATULATIONS! Taxa filtering selected.")
-      }
-      
-      ## Include only specific sample groups within the plot/;
-      if (is.na(input$b1_meta_group) == TRUE) {
-        warning(
-          "No metadata category selected. Script will continue without filtering by groups."
-        )
-      } else {
-        sample_hits <-
-          grepl(
-            pattern = input$b1_meta_keyword,
-            ignore.case = TRUE,
-            x = (eval(parse(
-              text = paste("data_long_bubble$", input$b1_meta_group)
-            )))
-          )
-        data_long_bubble <- data_long_bubble[sample_hits, ]
-        warning("Metadata filtering selected.")
-      }
-      
-      
-      ## Attach full taxonomic lineage and separate into classifications, and fix labelling issues:
-      data_long_bubble$Sep <- data_long_bubble$Taxonomy
-      data_long_bubble$Sep <- gsub("(d__)", "", data_long_bubble$Sep)
-      data_long_bubble$Sep <- gsub("(p__)", "", data_long_bubble$Sep)
-      data_long_bubble$Sep <- gsub("(c__)", "", data_long_bubble$Sep)
-      data_long_bubble$Sep <- gsub("(o__)", "", data_long_bubble$Sep)
-      data_long_bubble$Sep <- gsub("(f__)", "", data_long_bubble$Sep)
-      data_long_bubble$Sep <- gsub("(g__)", "", data_long_bubble$Sep)
-      data_long_bubble$Sep <- gsub("(s__)", "", data_long_bubble$Sep)
-      data_long_bubble <-
-        separate(
-          data_long_bubble,
-          Sep,
-          c(
-            "Domain",
-            "Phylum",
-            "Class",
-            "Order",
-            "Family",
-            "Genus",
-            "Species"
-          ),
-          sep = ";",
-          remove = TRUE,
-          convert = FALSE
-        )
-      
-      data_long_bubble
-    })
+    # #### Bubble plot - old style ####
+    # data_bubble_reactive_old <- reactive({
+    #   data_long <- data_long_react()
+    #   meta_data_table <- meta_datafile()
+    #   
+    #   
+    #   ## Filter above a threshold, append metadata, and round decimals
+    #   data_long_bubble <- data_long
+    #   data_long_bubble <-
+    #     dplyr::filter(data_long, Percentage > as.numeric(input$b1_ab_thresh))
+    #   data_long_bubble <-
+    #     left_join(data_long_bubble,
+    #               meta_data_table,
+    #               by = "SampleName",
+    #               copy = TRUE)
+    #   data_long_bubble$Percentage <-
+    #     round(data_long_bubble$Percentage,
+    #           digits = as.numeric(input$b1_num_dec))
+    #   
+    #   
+    #   ## Include only specific taxa  within the plot
+    #   if (is.na(input$b1_tax_keyword) == TRUE) {
+    #     warning("No specific taxon selected. Script will continue without filtering by taxa.")
+    #   } else {
+    #     taxon_hits <-
+    #       grepl(
+    #         pattern = input$b1_tax_keyword,
+    #         ignore.case = TRUE,
+    #         x = data_long_bubble$Taxonomy
+    #       )
+    #     data_long_bubble <- data_long_bubble[taxon_hits, ]
+    #     warning("CONGRATULATIONS! Taxa filtering selected.")
+    #   }
+    #   
+      # ## Include only specific sample groups within the plot/;
+      # if (is.na(input$b1_meta_group) == TRUE) {
+      #   warning(
+      #     "No metadata category selected. Script will continue without filtering by groups."
+      #   )
+      # } else {
+      #   sample_hits <-
+      #     grepl(
+      #       pattern = input$b1_meta_keyword,
+      #       ignore.case = TRUE,
+      #       x = (eval(parse(
+      #         text = paste("data_long_bubble$", input$b1_meta_group)
+      #       )))
+      #     )
+      #   data_long_bubble <- data_long_bubble[sample_hits, ]
+      #   warning("Metadata filtering selected.")
+      # }
+    #   
+    #   
+    #   ## Attach full taxonomic lineage and separate into classifications, and fix labelling issues:
+    #   data_long_bubble$Sep <- data_long_bubble$Taxonomy
+    #   data_long_bubble$Sep <- gsub("(d__)", "", data_long_bubble$Sep)
+    #   data_long_bubble$Sep <- gsub("(p__)", "", data_long_bubble$Sep)
+    #   data_long_bubble$Sep <- gsub("(c__)", "", data_long_bubble$Sep)
+    #   data_long_bubble$Sep <- gsub("(o__)", "", data_long_bubble$Sep)
+    #   data_long_bubble$Sep <- gsub("(f__)", "", data_long_bubble$Sep)
+    #   data_long_bubble$Sep <- gsub("(g__)", "", data_long_bubble$Sep)
+    #   data_long_bubble$Sep <- gsub("(s__)", "", data_long_bubble$Sep)
+    #   data_long_bubble <-
+    #     separate(
+    #       data_long_bubble,
+    #       Sep,
+    #       c(
+    #         "Domain",
+    #         "Phylum",
+    #         "Class",
+    #         "Order",
+    #         "Family",
+    #         "Genus",
+    #         "Species"
+    #       ),
+    #       sep = ";",
+    #       remove = TRUE,
+    #       convert = FALSE
+    #     )
+    #   
+    #   data_long_bubble
+    # })
     
     
     #### Bubble plot - base plot ####
@@ -1928,7 +2008,6 @@ server <- function(input, output, session) {
       bubble_plot
       
       
-      
       #### Bubble plot - sample reads ####
         filtered_table <- data_filtered_table()
         meta_data_table <- meta_datafile()
@@ -1959,6 +2038,45 @@ server <- function(input, output, session) {
         
         ## Make a list of unique metadata
         read_meta_list <- unique(input$b1_sort_param)
+        
+        ## Now filter for metadata, if selected
+        if (is.na(input$b1_meta_group)) {
+          warning("No metadata category selected. Script will continue without filtering by groups.")
+        } else {
+          # Split the input$b1_meta_keyword into a list of keywords using ","
+          meta_keywords <- strsplit(input$b1_meta_keyword, ",")[[1]]
+          
+          # Create a pattern by pasting the keywords with "|" for OR condition
+          pattern <- paste(meta_keywords, collapse = "|")
+          
+          # Use any() to check if any keyword matches in the metadata group
+          sample_hits <- sapply(data_read_total[, input$b1_meta_group], function(group_value) {
+            any(grepl(pattern, group_value, ignore.case = TRUE))
+          })
+          
+          # Subset the data_long_bubble dataset based on sample_hits
+          data_read_total <- data_read_total[sample_hits, ]
+          
+          # Display a warning message indicating metadata filtering is selected
+          warning("Metadata filtering selected.")
+        }
+
+        # if (is.na(input$b1_meta_group) == TRUE) {
+        #   warning(
+        #     "No metadata category selected. Script will continue without filtering by groups."
+        #   )
+        # } else {
+        #   sample_hits <-
+        #     grepl(
+        #       pattern = input$b1_meta_keyword,
+        #       ignore.case = TRUE,
+        #       x = (eval(parse(
+        #         text = paste("data_read_total$", input$b1_meta_group)
+        #       )))
+        #     )
+        #   data_read_total <- data_read_total[sample_hits, ]
+        #   warning("Metadata filtering selected.")
+        # }
         
           read_plot <- ggplot(data = data_read_total,
                               aes(
@@ -2047,14 +2165,13 @@ server <- function(input, output, session) {
         
         read_plot
         
-        
         #### Bubble plot - taxa proportions ####
-        ## Currently not working when filtering by taxa
         
         if (input$b1_include_taxa == TRUE){
 
         # row sums for taxonomy read plot
         B2_data_prop <- data_bubble_reactive_new()
+        data_long_bubble <- data_data_long_re()
         
         taxonomy_read_data <- data_read
         taxonomy_read_data$Total <- rowSums(taxonomy_read_data)
@@ -2123,19 +2240,52 @@ server <- function(input, output, session) {
         # Set rownames into a new column
         taxonomy_read_final$full_lineage <- rownames(taxonomy_read_final)
         
+        
+        ## New taxa filtering
         if (is.na(input$b1_tax_keyword) == TRUE) {
           warning("No specific taxon selected. Script will continue without filtering by taxa.")
         } else {
-          taxon_hits <-
-            grepl(
-              pattern = input$b1_tax_keyword,
-              ignore.case = TRUE,
-              x = taxonomy_read_final$full_lineage
-            )
+          # Split the input$b1_tax_keyword into a list of keywords using ","
+          tax_keywords <- strsplit(input$b1_tax_keyword, ",")[[1]]
+          
+          # Create a pattern by pasting the keywords with "|" for OR condition
+          pattern <- paste(tax_keywords, collapse = "|")
+          
+          # Perform pattern matching using grepl
+          taxon_hits <- grepl(
+            pattern = pattern,
+            ignore.case = TRUE,
+            x = taxonomy_read_final$full_lineage
+          )
+          
+          # Subset the data_long_bubble dataset based on taxon_hits
           taxonomy_read_final <- taxonomy_read_final[taxon_hits, ]
-          warning("CONGRATULATIONS! Taxa filtering selected.")
+          
+          # Display a warning message indicating taxa filtering is selected
+          warning("Taxa filtering selected.")
         }
         
+        taxonomy_read_final <- taxonomy_read_final[taxonomy_read_final$TaxaName %in% data_long_bubble$TaxaName, ,drop = FALSE]
+        
+        # ## New sample group filtering. What this actually needs to do is check which taxa remain in the filtered data_long_bubble table after
+        # earlier metadata filtering, then only include proportion data for the TaxaName that remain. 
+
+        
+        
+        
+        # if (is.na(input$b1_tax_keyword) == TRUE) {
+        #   warning("No specific taxon selected. Script will continue without filtering by taxa.")
+        # } else {
+        #   taxon_hits <-
+        #     grepl(
+        #       pattern = input$b1_tax_keyword,
+        #       ignore.case = TRUE,
+        #       x = taxonomy_read_final$full_lineage
+        #     )
+        #   taxonomy_read_final <- taxonomy_read_final[taxon_hits, ]
+        #   warning("CONGRATULATIONS! Taxa filtering selected.")
+        # }
+
         ## The faceting does not properly align the proportions; they are reversed. So you have to reorder them manually.
         taxa_readplot = ggplot(data = taxonomy_read_final, aes(x =  reorder(TaxaName, desc(TaxaName)), y = Prop))
         
