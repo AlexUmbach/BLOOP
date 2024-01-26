@@ -3256,7 +3256,6 @@ server <- function(input, output, session) {
     }
     
     
-    
     if (dim(pcoa_envfit_df_filt)[1] != 0) {
       ## Add triplot info and labels: ## Add if statement here
       pcoa_plot <- pcoa_plot + geom_segment(
@@ -3279,6 +3278,15 @@ server <- function(input, output, session) {
           ),
           size = 4
         )
+    }
+    
+    
+    if (input$uni_pcoa_gradient == TRUE){
+      pcoa_plot <- pcoa_plot + scale_colour_viridis(option = input$uni_pcoa_pallet_selection,discrete = TRUE)
+      pcoa_plot <- pcoa_plot + scale_fill_viridis(option = input$uni_pcoa_pallet_selection,discrete = TRUE)
+    } else {
+      pcoa_plot <- pcoa_plot + scale_fill_manual(values = available_fill) +
+        scale_colour_manual(values = available_fill)
     }
     
     
