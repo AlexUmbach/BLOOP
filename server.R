@@ -15,6 +15,9 @@ server <- function(input, output, session) {
   output$ranked_plot_out <- renderDT(NULL)
   output$uni_pcoa_plot_out <- renderDT(NULL)
   
+  ## Button clicks
+  uni_button_click <- reactiveVal(FALSE)
+  
   
   # # Start buttons
   # read_start_pressed <- reactiveVal(FALSE)
@@ -28,7 +31,7 @@ server <- function(input, output, session) {
   # ranked_start_pressed <- reactiveVal(FALSE)
   # })
   
-  ## These pass on the metadata column names to all of the drop down menus
+  ## These pass on the metadata column names to all of the drop down menus. They might be causing issues with my start buttons.
   observe({
     req(input$meta_file)
     
@@ -73,6 +76,9 @@ server <- function(input, output, session) {
     updateSelectInput(session, "pcoa_pallet_selection")
     updateSelectInput(session, "pcoa_gradient")
     
+    ## Update Selection - UniPCoA plot
+    
+    
     ## Update selection - Ranked
     updateSelectInput(session, "ranked_sort_param", choices = meta_colnames)
     updateSelectInput(session, "ranked_color_param", choices = meta_colnames)
@@ -90,11 +96,11 @@ server <- function(input, output, session) {
   ## Update selection - UniFrac PCoA plot
   observe({
     req(input$uni_meta_file)
-    
+
     meta_datafile <- uni_meta_datafile_og()
     meta_colnames <- c(colnames(meta_datafile), "TaxaName")
     meta_colnames <- meta_colnames[meta_colnames != "SampleName"]
-    
+
     updateSelectInput(session, "uni_pcoa_fill_col", choices = meta_colnames)
     updateSelectInput(session, "uni_pcoa_elips_col", choices = meta_colnames)
     updateSelectInput(session, "uni_pcoa_shape", choices = meta_colnames)
@@ -2324,7 +2330,7 @@ server <- function(input, output, session) {
           axis.title.y = element_blank(),
           axis.text.y = element_blank(),
           strip.text.x = element_text(size=10,face="bold"),
-          panel.spacing = unit(0, "lines"),
+          panel.spacing = unit(as.numeric(input$b1_panel_spacing), "points"),
           panel.border = element_rect(colour="black",size=0,fill=NA),
           axis.ticks = element_line(colour = "black"),
           axis.ticks.y = element_blank(),
@@ -3149,8 +3155,11 @@ server <- function(input, output, session) {
   #   
   # })
   
- observeEvent(input$uni_pcoa_start, {
+ observeEvent(input$uni_pcoa_start, { # beginning of observe event for unifrac PCoA
+   if(!uni_button_click()){
+   
   uni_pcoa_plot_react <- reactive({
+    
     ## I need to modify this so if the dataframe is empty it doesn't include the environmental fit data
     
     pcoa_df <- uni_pcoa_coords_react()
@@ -3385,8 +3394,11 @@ server <- function(input, output, session) {
   width = uni_pcoa_plot_width,
   height = uni_pcoa_plot_height)
   
- })
+  uni_button_click(TRUE)
   
+  } # End of button click
+  }) # End of observe event for unifrac PCoA
+
   output$uni_pcoa_download <- downloadHandler(
     filename = "uni_pcoa_plot.pdf",
     contentType = ".pdf",
@@ -3402,31 +3414,6 @@ server <- function(input, output, session) {
       )
     }
   )
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   #### Ranked abundance plot ####
   # For this plot, I think I need to generate all of the data again, including the taxonomy labels. I think I can use the prop table or filtered table from previously
@@ -4026,6 +4013,15 @@ server <- function(input, output, session) {
   output$helppdf = renderUI({
     tags$iframe(src = "UA_2022_biblio.pdf", style = "height: 800px; width: 100%")
   })
+  
+  
+  
+  # Final action button observe events
+  
+  observeEvent(input$uni_pcoa_start, {
+    uni_button_click(FALSE)},
+    ignoreInit = TRUE)
+    
   
 }
 
