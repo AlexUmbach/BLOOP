@@ -26,6 +26,7 @@ library(ggh4x)
 library(shinyjs)
 library(patchwork)
 library(viridis)
+library(GUniFrac)
 
 
 ## Set working directory. This should be the directory where app.R is stored. 
@@ -191,7 +192,7 @@ ui <- navbarPage(id = "navbarID",
         tabPanel("Upload data",
                  sidebarLayout(
                    sidebarPanel(h5("Please upload your data"),
-                                actionButton("test_data", "Use test data"),
+                                # actionButton("test_data", "Use test data"),
                                 fileInput("main_file","Primary ASV table"),
                                 checkboxInput("is_main_collapsed","Is this a collapsed table?",value = FALSE),
                                 #radioButtons("main_filetype","Please select your filetype",c("tsv","csv","txt")),
@@ -497,8 +498,10 @@ ui <- navbarPage(id = "navbarID",
         tabPanel("Upload UniFrac data",
                  sidebarLayout(
                    sidebarPanel(h5("Please upload your data"),
-                                fileInput("unifrac_file","UniFrac distance matrix"),
-                                fileInput("uni_meta_file","Metadata table"),
+                                fileInput("unifrac_tree","Please upload your rooted phylogenetic tree (in Newick format)"),
+                                # fileInput("uni_meta_file","Metadata table"),
+                                selectInput("uni_diss_select",label = "Select your type of UniFrac", choices = c("unweighted","weighted")),
+                                numericInput("uni_srs_depth", label = "Select your sampling depth", value = 5000),
                                 numericInput("uni_env_thresh", label = "Select your p-value threshold (0 to 1)",value = 0.5, min = 0, max = 1),
                                 selectInput("uni_pcoa_fill_col",label = "Select your fill colour", choices = "Updating"),
                                 sliderInput("uni_pcoa_size_select", "Change your point size", value = 5,min = 0, max = 15),
@@ -515,7 +518,7 @@ ui <- navbarPage(id = "navbarID",
                                 style = "overflow-y:scroll; max-height: 850px; position:relative; border-color:#000000"
                    ),
                    mainPanel(width = 9,
-                             "Uni PCoA",
+                             "This is the UniFrac triplot. It is a PCoA plot generated using the UniFrac dissimilarity metric, overlayed with environmental and taxonomic data. Please be patient; matrix generation may take upwards of 30 seconds.",
                              fluidRow(
                                #   box(
                                #   textInput("pcoa_plot_width","Plot width",value = 12),
