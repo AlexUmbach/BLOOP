@@ -189,7 +189,7 @@ ui <- navbarPage(id = "navbarID",
         
         
         #### Upload Data and review ####
-        tabPanel("Upload data",
+        tabPanel("Data upload",
                  sidebarLayout(
                    sidebarPanel(h5("Please upload your data"),
                                 # actionButton("test_data", "Use test data"),
@@ -320,7 +320,7 @@ ui <- navbarPage(id = "navbarID",
         
         
         #### Taxa bar plot analysis ####
-        tabPanel("Taxonomic bar plot",
+        tabPanel("Taxonomy relative abundance",
                  sidebarLayout(
                    sidebarPanel(h4("Select preferences"),
                                 actionButton("bar_start",label = "Start!"),
@@ -371,7 +371,7 @@ ui <- navbarPage(id = "navbarID",
         
         
         #### Bubble plot ####
-        tabPanel("Bubble plot",
+        tabPanel("Relative Abundance Bubble plot",
                  sidebarLayout(
                    sidebarPanel(h4("Select preferences"),
                                 actionButton("bubble_start",label = "Start!"),
@@ -440,7 +440,7 @@ ui <- navbarPage(id = "navbarID",
         
         
         #### Bray curtis PCOA ####
-        tabPanel("Bray-Curtis PCoA",
+        tabPanel("Bray-Curtis PCoA Triplot",
                  sidebarLayout(
                    sidebarPanel(h4("Select preferences"),
                                 actionButton("pcoa_start",label = "Start!"),
@@ -495,7 +495,7 @@ ui <- navbarPage(id = "navbarID",
         ),
         
         #### UniFrac Plot ####
-        tabPanel("Upload UniFrac data",
+        tabPanel("UniFrac PCoA Triplot",
                  sidebarLayout(
                    sidebarPanel(h5("Please upload your data"),
                                 fileInput("unifrac_tree","Please upload your rooted phylogenetic tree (in Newick format)"),
