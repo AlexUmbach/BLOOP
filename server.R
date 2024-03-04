@@ -3266,7 +3266,7 @@ server <- function(input, output, session) {
     taxon_weighted_scores <-
       filter(
         taxon_weighted_scores,
-        taxon_weighted_scores$Abundance > 2 / 100
+        taxon_weighted_scores$Abundance > input$uni_taxa_thresh / 100
       ) # Filter taxonomy abundance based on a threshold
     taxon_weighted_scores$FeatureID <- rownames(taxon_weighted_scores)
     feature_taxonomy_labels$FeatureID <- rownames(feature_taxonomy_labels)
