@@ -394,9 +394,7 @@ server <- function(input, output, session) {
   ## This needs to be changed to be only activated once, then again by any subsequent
   
   data_tran_contam_filt_react <- reactive({
-    #data_tran = data_tran_react()
-    
-    # if(input$is_main_collapsed == "No"){
+
     if (input$contam_filter == "Remove") {
       contam_datafile <- contam_datafile()
       data_tran <- data_tran_react()
@@ -2456,7 +2454,7 @@ server <- function(input, output, session) {
   # Call in the main files
     pcoa_data_main_re <- reactive({
       meta_data_table <- meta_datafile()
-      main_data_table <- data_tran_react()
+      main_data_table <- data_tran_contam_filt_react()
       
       # # Filter for samples present in the metadata file -- Not sure if this is needed
       # meta_names <- c(meta_data_table$SampleName, "Consensus.Lineage", "rowID", "Feature.ID", "ReprSequence")
@@ -3022,7 +3020,7 @@ server <- function(input, output, session) {
   
   # Forgot I need to rarify with SRS first:
   uni_srs_prop_table_re <- reactive({
-    main_data_table <- main_datafile()
+    main_data_table <- data_tran_contam_filt_react()
     meta_data_table <- meta_datafile()
     feature_taxonomy_labels <- data_labels_react()
     req(input$unifrac_tree)
