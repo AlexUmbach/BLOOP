@@ -54,8 +54,10 @@ server <- function(input, output, session) {
 
     ## Update selection - Bar plot
     updateSelectInput(session, "bar_sortby_xaxis", choices = meta_colnames)
+    updateSelectInput(session, "bar_taxon_level")
     updateTextInput(session, "bar_plotheight")
     updateTextInput(session, "bar_plotwidth")
+    
 
     ## Update selection - Bubble plot
     updateSelectInput(session, "b1_sort_param", choices = meta_colnames)
@@ -1092,6 +1094,13 @@ server <- function(input, output, session) {
       # data_long_bar_filt <- dplyr::filter(data_long_bar, Percentage > as.numeric(input$bar_cutoff))
       data_long_bar_filt <- data_long_bar
       
+      ## Sort the table by taxonomic level, then combine the proportions for each sample with a matching taxonomy
+      data_long_bar_filt <- data_long_bar_filt %>% group_by(SampleName, eval(parse(text=paste("data_long_bar_filt$",input$bar_taxon_level)))) %>% summarize(Percentage = sum(Percentage))
+      
+      ## Rename the columns, join with metadata
+      colnames(data_long_bar_filt) <- c("SampleName","Taxonomy", "Percentage")
+      data_long_bar_filt <- subset(data_long_bar_filt, select = c("SampleName", "Taxonomy", "Percentage"))
+      data_long_bar_filt <- left_join(data_long_bar_filt, meta_data_table, by = "SampleName")
       
       ## Include only specific taxa within the plot
       if (is.na(input$taxon_subset) == TRUE) {
@@ -1119,8 +1128,10 @@ server <- function(input, output, session) {
         cbind(bar_incl_samples, 100 - bar_incl_samples$x)
       colnames(bar_incl_samples) <-
         c("SampleName", "FiltSum", "Percentage")
-      bar_incl_samples$TaxaName <- "ZZOther"
+      # bar_incl_samples$TaxaName <- "ZZOther"
       bar_incl_samples$Taxonomy <- "ZZOther"
+      
+      
       bar_incl_samples <- select(bar_incl_samples, -c("FiltSum"))
       data_long_bar_filt <-
         bind_rows(data_long_bar_filt, bar_incl_samples)
@@ -1132,9 +1143,9 @@ server <- function(input, output, session) {
       data_long_bar_filt <- select(data_long_bar_filt,-barfilt)
       
       
-      ## Modify the labels again to remove numbers from the legend:
-      data_long_bar_filt$TaxaName <-
-        gsub("_[0-9]*$", "", data_long_bar_filt$TaxaName)
+      # ## Modify the labels again to remove numbers from the legend:
+      # data_long_bar_filt$TaxaName <-
+      #   gsub("_[0-9]*$", "", data_long_bar_filt$TaxaName)
       
       # ## Append the metadata
       data_long_bar_filt <-
@@ -1151,6 +1162,7 @@ server <- function(input, output, session) {
         factor(data_long_bar_filt$SampleName,
                levels = unique(data_long_bar_filt$SampleName))
       data_long_bar_filt
+      
     })
     
     barplot_reactive <- reactive({
@@ -1158,10 +1170,12 @@ server <- function(input, output, session) {
       
       bar_plot <- ggplot(data = data_long_bar_filt,
                          aes(x = SampleName,
-                             y = Percentage, width = 1))
+                             y = Percentage, width = 1,
+                             fill = Taxonomy
+                             ))
       
       bar_plot <- bar_plot + geom_bar(
-        aes(fill = TaxaName),
+        # aes(fill = input$bar_taxon_level),
         colour = "black",
         size = 0.5,
         alpha = input$bar_alpha,
@@ -1231,7 +1245,7 @@ server <- function(input, output, session) {
 
       nb.cols <-
         length(unique(eval(parse(
-          text = paste("data_long_bar_filt$", "TaxaName")
+          text = paste("data_long_bar_filt$", "Taxonomy")
         ))))
       mycolors <- colorRampPalette(brewer.pal(8, "Paired"))(nb.cols)
       ## colour fill using Brewers
