@@ -412,7 +412,7 @@ ui <- navbarPage(id = "navbarID",
                                   selectInput("b1_third_facet_meta","Choose the third ordering",choices = "Updating"),
                                 ),
                                 
-                                radioButtons("b1_confirm_sort","Do you want to sort the y-axis by taxonomic classification?",c("Yes","No"), selected = "Yes", inline = TRUE),
+                                radioButtons("b1_confirm_sort","Do you want to sort the y-axis by taxonomic classification?",c("Yes"), selected = "Yes", inline = TRUE),
                                 selectInput("b1_tax_sort","By what taxonomic level will the y-axis be sorted?",c("Phylum","Class","Order","Family","Genus","Species")),
                                 textInput("b1_tax_keyword","Filter for specific or multiple taxa (example: staph,coryn). Must be separated by a comma; do not include spaces"),
                                 selectInput("b1_meta_group","Select a metadata category for data filtering",choices = "Updating"),
