@@ -2593,10 +2593,30 @@ server <- function(input, output, session) {
       eigen_df
     })
     
+    
+    #Testing optional metadata file upload. Also needs to filter missing samples
+    bray_metadata_table <- reactive({
+      meta_data_table <- read.table(
+      file = input$bray_metadata$datapath,
+      fill = TRUE,
+      header = TRUE,
+      sep = "\t"
+      )
+      # srs_table <- bc_pcoa_react
+      # pcoa_filt_colnames <- colnames(srs_table)
+      # meta_data_table <-
+      #   meta_data_table %>% filter(SampleName %in% pcoa_filt_colnames)
+      # meta_data_table
+      meta_data_table
+      })
+    
+    
     pcoa_envfit_react <- reactive({
       pcoa_result <- bc_pcoa_react()
-      meta_data_table <- meta_datafile()
+      # meta_data_table <- meta_datafile()
       srs_table <- srs_react()
+      meta_data_table <- bray_metadata_table()
+    
       
       # Collect the column names after SRS rarefaction
       pcoa_filt_colnames <- colnames(srs_table)
@@ -2606,9 +2626,7 @@ server <- function(input, output, session) {
         meta_data_table %>% filter(SampleName %in% pcoa_filt_colnames)
       meta_data_table
       
-      # Filter the main table
-      
-      
+      # Filter the main tabl
 
       ## Process for all the environment variables for triplot and separate the vectors and R2 ##
       # pcoa_test = cmdscale(pcoa_srs_diss, k=3, eig = TRUE)
@@ -3051,7 +3069,6 @@ server <- function(input, output, session) {
   
   # Create a proportion table
   proportion_table <- srs_table / colSums(srs_table)
-  
   # # Combine the proportion table back with the non-numeric data
   # proportion_table <- cbind(proportion_table,sample_info_data)
   
@@ -3195,8 +3212,25 @@ server <- function(input, output, session) {
 
   })
   
+  uni_metadata_table <- reactive({
+    meta_data_table <- read.table(
+      file = input$uni_metadata$datapath,
+      fill = TRUE,
+      header = TRUE,
+      sep = "\t"
+    )
+    # srs_table <- bc_pcoa_react
+    # pcoa_filt_colnames <- colnames(srs_table)
+    # meta_data_table <-
+    #   meta_data_table %>% filter(SampleName %in% pcoa_filt_colnames)
+    # meta_data_table
+    meta_data_table
+  })
+  
+  
   uni_envfit_react <- reactive({
-    meta_data_table <- uni_metadata_filt_react()
+    # meta_data_table <- uni_metadata_filt_react()
+    meta_data_table <- uni_metadata_table()
     if (input$uni_diss_select == "unweighted"){
       pcoa_result <- uni_unweighted_pcoa_react()
       pcoa_envfit <- envfit(pcoa_result$vectors, meta_data_table, perm = 10000)
@@ -3226,6 +3260,7 @@ server <- function(input, output, session) {
       pcoa_envfit_df
     }
   })
+  
   
   uni_envfit_filt_react <- reactive({
     pcoa_envfit_df <- uni_envfit_react()
@@ -3601,6 +3636,7 @@ server <- function(input, output, session) {
     content = function(uni_envfit_filt_table) {
       write.csv(uni_envfit_filt_react(), uni_envfit_filt_table)
     })
+  
 
   ## Adjusting the PCoA image and saving
   ## You must define the input for width/height within a reactive context, then call it in the output.
