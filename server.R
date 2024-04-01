@@ -2651,7 +2651,8 @@ server <- function(input, output, session) {
     pcoa_envfit_df_filt_re <- reactive({
       pcoa_envfit_df <- pcoa_envfit_react()
       pcoa_envfit_df_filt <- filter(pcoa_envfit_df,
-                                    pcoa_envfit_df$pvalue < input$pcoa_env_thresh)
+                                    pcoa_envfit_df$pvalue < input$pcoa_env_thresh &
+                                      pcoa_envfit_df$R < input$pcoa_env_R_thresh)
       pcoa_envfit_df_filt
     })
     
@@ -3212,6 +3213,7 @@ server <- function(input, output, session) {
 
   })
   
+  
   uni_metadata_table <- reactive({
     meta_data_table <- read.table(
       file = input$uni_metadata$datapath,
@@ -3266,10 +3268,16 @@ server <- function(input, output, session) {
     pcoa_envfit_df <- uni_envfit_react()
     # # Filter below a specified threshold (p-value?). Need to look more into what these axis values represent.
     # pcoa_envfit_df = filter(pcoa_envfit_df, pcoa_envfit_df$R < 0.5)
+    # pcoa_envfit_df_filt <- filter(pcoa_envfit_df,
+    #                               pcoa_envfit_df$pvalue < input$uni_env_thresh)
+    
     pcoa_envfit_df_filt <- filter(pcoa_envfit_df,
-                                  pcoa_envfit_df$pvalue < input$uni_env_thresh)
+                                  pcoa_envfit_df$R < input$uni_env_r_thresh &
+                                    pcoa_envfit_df$pvalue < input$uni_env_thresh)
+    
     pcoa_envfit_df_filt
   })
+
   
   uni_taxonomy_scores <- reactive({
     meta_data_table <- uni_metadata_filt_react()
