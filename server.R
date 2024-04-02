@@ -234,6 +234,10 @@ server <- function(input, output, session) {
     })
     })
     
+  
+  
+  
+  
     ## Main ASV table
   {
     output$main_table <- renderDataTable({
@@ -2595,27 +2599,28 @@ server <- function(input, output, session) {
     
     
     #Testing optional metadata file upload. Also needs to filter missing samples
-    bray_metadata_table <- reactive({
-      meta_data_table <- read.table(
-      file = input$bray_metadata$datapath,
-      fill = TRUE,
-      header = TRUE,
-      sep = "\t"
-      )
-      # srs_table <- bc_pcoa_react
-      # pcoa_filt_colnames <- colnames(srs_table)
-      # meta_data_table <-
-      #   meta_data_table %>% filter(SampleName %in% pcoa_filt_colnames)
-      # meta_data_table
-      meta_data_table
-      })
+    # bray_metadata_table <- reactive({
+    #   meta_data_table <- read.table(
+    #   file = input$bray_metadata$datapath,
+    #   fill = TRUE,
+    #   header = TRUE,
+    #   sep = "\t"
+    #   )
+    #   # srs_table <- bc_pcoa_react
+    #   # pcoa_filt_colnames <- colnames(srs_table)
+    #   # meta_data_table <-
+    #   #   meta_data_table %>% filter(SampleName %in% pcoa_filt_colnames)
+    #   # meta_data_table
+    #   meta_data_table
+    #   })
     
     
     pcoa_envfit_react <- reactive({
       pcoa_result <- bc_pcoa_react()
-      # meta_data_table <- meta_datafile()
+      meta_data_table <- meta_datafile()
       srs_table <- srs_react()
-      meta_data_table <- bray_metadata_table()
+      # Optional metadata file
+      # meta_data_table <- bray_metadata_table()
     
       
       # Collect the column names after SRS rarefaction
@@ -2941,8 +2946,6 @@ server <- function(input, output, session) {
         )
       }
       
-      
-      
       # Customize plot aesthetics
       pcoa_plot <- pcoa_plot +
         theme(
@@ -3039,12 +3042,49 @@ server <- function(input, output, session) {
   observeEvent(input$uni_pcoa_start, {
   uni_data_tree_react <- reactive({
     req(input$unifrac_tree)
-    req(input$main_file)
-    req(input$meta_file)
+    # req(input$main_file)
+    # req(input$meta_file)
     read.tree(
       file = input$unifrac_tree$datapath
     )
   })
+  
+  # #Testing optional metadata file upload. Also needs to filter missing samples
+  # uni_metadata_table <- reactive({
+  #   req(input$uni_metadata)
+  #   meta_data_table <- read.table(
+  #     file = input$uni_metadata$datapath,
+  #     fill = TRUE,
+  #     header = TRUE,
+  #     sep = "\t"
+  #   )
+  #   # srs_table <- bc_pcoa_react
+  #   # pcoa_filt_colnames <- colnames(srs_table)
+  #   # meta_data_table <-
+  #   #   meta_data_table %>% filter(SampleName %in% pcoa_filt_colnames)
+  #   # meta_data_table
+  #   meta_data_table
+  # })
+  
+  # uni_asv_filter <- reactive({
+  #   main_data_table <- data_tran_contam_filt_react()
+  #   meta_data_table <- uni_metadata_table()
+  #   
+  #   meta_names <-
+  #     c(
+  #       meta_data_table$SampleName,
+  #       "Consensus.Lineage",
+  #       "rowID",
+  #       "Feature.ID",
+  #       "ReprSequence"
+  #     )
+  #   main_data_table <-
+  #     main_data_table[, names(main_data_table) %in% meta_names]
+  #   main_data_table
+  #   
+  # })
+  
+  
   # main_data_table <- read.table("Alex test/UniFrac/fishbiomass_asv.tsv", header = TRUE, sep = "\t")
   # data_tree <- read.tree("Alex test/UniFrac/fishbiomass_rooted_tree.nwk")
   # meta_data_table <- read.table("Alex test/UniFrac/2022_10_metadata_noNTC_noculture.tsv", header = TRUE, sep ="\t")
@@ -3053,7 +3093,7 @@ server <- function(input, output, session) {
   
   # Forgot I need to rarify with SRS first:
   uni_srs_prop_table_re <- reactive({
-    main_data_table <- data_tran_contam_filt_react()
+    main_data_table <- main_datafile()
     meta_data_table <- meta_datafile()
     feature_taxonomy_labels <- data_labels_react()
     req(input$unifrac_tree)
@@ -3064,7 +3104,7 @@ server <- function(input, output, session) {
                                                                    "rowID",
                                                                    "ReprSequence",
                                                                    "last_taxon")]
-  srs_table <- SRS(srs_table, Cmin = input$uni_srs_depth, seed = 123)
+  srs_table <- SRS(srs_table, Cmin = input$uni_srs_depth, seed = 231)
   rownames(srs_table) <- rownames(feature_taxonomy_labels)
   srs_table
   
@@ -3081,6 +3121,7 @@ server <- function(input, output, session) {
   # proportion_table <- t(proportion_table)
   proportion_table
   })
+  
   
   uni_metadata_filt_react <- reactive({
     srs_table <- uni_srs_prop_table_re()
@@ -3110,7 +3151,7 @@ server <- function(input, output, session) {
     proportion_table <- uni_srs_prop_table_re()
     data_tree <- uni_data_tree_react()
     proportion_table <- t(proportion_table)
-    uni_diss <- GUniFrac(proportion_table, data_tree, alpha = c(0,0.5,1), verbose = TRUE)$unifracs
+    uni_diss <- GUniFrac(proportion_table, data_tree, alpha = c(0,0.5,1))$unifracs
     uni_diss
   })
   
@@ -3212,27 +3253,10 @@ server <- function(input, output, session) {
     eigen_df
 
   })
-  
-  
-  uni_metadata_table <- reactive({
-    meta_data_table <- read.table(
-      file = input$uni_metadata$datapath,
-      fill = TRUE,
-      header = TRUE,
-      sep = "\t"
-    )
-    # srs_table <- bc_pcoa_react
-    # pcoa_filt_colnames <- colnames(srs_table)
-    # meta_data_table <-
-    #   meta_data_table %>% filter(SampleName %in% pcoa_filt_colnames)
-    # meta_data_table
-    meta_data_table
-  })
-  
-  
+
   uni_envfit_react <- reactive({
     # meta_data_table <- uni_metadata_filt_react()
-    meta_data_table <- uni_metadata_table()
+    meta_data_table <- meta_datafile()
     if (input$uni_diss_select == "unweighted"){
       pcoa_result <- uni_unweighted_pcoa_react()
       pcoa_envfit <- envfit(pcoa_result$vectors, meta_data_table, perm = 10000)
@@ -3280,7 +3304,7 @@ server <- function(input, output, session) {
 
   
   uni_taxonomy_scores <- reactive({
-    meta_data_table <- uni_metadata_filt_react()
+    meta_data_table <- meta_datafile()
     feature_taxonomy_labels <- data_labels_react()
     pcoa_srs <- uni_srs_prop_table_re()
     
