@@ -2652,7 +2652,7 @@ server <- function(input, output, session) {
       pcoa_envfit_df <- pcoa_envfit_react()
       pcoa_envfit_df_filt <- filter(pcoa_envfit_df,
                                     pcoa_envfit_df$pvalue < input$pcoa_env_thresh &
-                                      pcoa_envfit_df$R < input$pcoa_env_R_thresh)
+                                      pcoa_envfit_df$R > input$pcoa_env_R_thresh)
       pcoa_envfit_df_filt
     })
     
@@ -3272,7 +3272,7 @@ server <- function(input, output, session) {
     #                               pcoa_envfit_df$pvalue < input$uni_env_thresh)
     
     pcoa_envfit_df_filt <- filter(pcoa_envfit_df,
-                                  pcoa_envfit_df$R < input$uni_env_r_thresh &
+                                  pcoa_envfit_df$R > input$uni_env_r_thresh &
                                     pcoa_envfit_df$pvalue < input$uni_env_thresh)
     
     pcoa_envfit_df_filt
