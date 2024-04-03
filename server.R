@@ -3255,8 +3255,8 @@ server <- function(input, output, session) {
   })
 
   uni_envfit_react <- reactive({
-    # meta_data_table <- uni_metadata_filt_react()
-    meta_data_table <- meta_datafile()
+    meta_data_table <- uni_metadata_filt_react()
+    # meta_data_table <- meta_datafile()
     if (input$uni_diss_select == "unweighted"){
       pcoa_result <- uni_unweighted_pcoa_react()
       pcoa_envfit <- envfit(pcoa_result$vectors, meta_data_table, perm = 10000)
@@ -3296,15 +3296,15 @@ server <- function(input, output, session) {
     #                               pcoa_envfit_df$pvalue < input$uni_env_thresh)
     
     pcoa_envfit_df_filt <- filter(pcoa_envfit_df,
-                                  pcoa_envfit_df$R > input$uni_env_r_thresh &
-                                    pcoa_envfit_df$pvalue < input$uni_env_thresh)
-    
+                                  pcoa_envfit_df$pvalue < input$uni_env_thresh &
+                                    pcoa_envfit_df$R > input$uni_env_r_thresh)
     pcoa_envfit_df_filt
+
   })
 
   
   uni_taxonomy_scores <- reactive({
-    meta_data_table <- meta_datafile()
+    meta_data_table <- uni_metadata_filt_react()
     feature_taxonomy_labels <- data_labels_react()
     pcoa_srs <- uni_srs_prop_table_re()
     
