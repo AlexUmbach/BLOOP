@@ -40,10 +40,13 @@ library(GUniFrac)
 
 # main page
 Rversion = R.Version()$version.string
-bloop_welcome = "AOViz (working title) contains a series of R-based visualization scripts wrapped within an R Shiny UI, created by Alex Umbach and the Neufeld Lab at the University of Waterloo. Its intended purpose is to allow for real-time figure generation with minimal user input, all generated from an ASV/OTU and metadata table. AOViz also offers real-time customization of figures with easy to use UI inputs and sliders that can allow you to make quick changes and (near) instantly view the results without ever having to touch a piece of code."
+bloop_welcome = "
+AOViz contains several R-based visualization scripts wrapped within an R Shiny UI, allowing users to quickly explore their short-read amplicon data.
+Figures can be customized using a provided metadata file and exported as PDFs.
+"
 
-
-bloop_req = "AOViz requires an ASV/OTU table produced from sequence data processing pipelines (i.e., QIIME2) using the QIIME2 taxonomy formatting. Any phylogenetic marker gene can be used (i.e., cpn60, amoA) so long as the taxonomy formatting is identical. All uploaded files must be in TSV format. Your ASV/OTU table should be formatted as detailed in the example picture below:"
+bloop_req = "AOViz requires an ASV/OTU table produced from sequence data processing pipelines (e.g., QIIME2) using the QIIME2/SILVA taxonomy formatting.
+Any phylogenetic marker gene can be used (e.g., cpn60, amoA) so long as the taxonomy formatting is identical. All uploaded files must be in txt format. Your ASV/OTU table should be formatted as detailed in the example picture below:"
 # asv_example
 # meta_example
 
@@ -141,7 +144,7 @@ ui <- navbarPage(id = "navbarID",
         tabPanel("WELCOME",
                  sidebarLayout(
                    sidebarPanel(Rversion,
-                                p("Contact alexumbach@gmail.com with issues or suggestions."),
+                                p("Leave any comments or suggestions on", a("the git page", href = "https://github.com/AlexUmbach/AOViz")),
                                 img(src="bloop_logo.svg", height = "100%", width = "100%"),
                                 #h1("WOW!"),
                                 #img(src="eric-head.gi", height = "100%", width = "100%"),
@@ -160,8 +163,8 @@ ui <- navbarPage(id = "navbarID",
                                ),
                              ),
                              box(
-                               p("This is how your ASV/OTU table should be formatted. The column",strong("Feature.ID"),"is required and must contain ASV IDs or a list of unique identifiers"),
-                               p("ASV/OTU tables can also be in a collapsed format, where the 'Feature.ID' column contains taxonomy. The",strong("Consensus.Lineage"),"and",strong("ReprSequence"),"headers must be as shown. The sample names are not restricted."),
+                               p("This is how your ASV/OTU table should be formatted. The column",strong("Feature.ID"),"is required and must contain unique identifiers for each row."),
+                               p("ASV/OTU tables can also be in a collapsed format, where the 'Feature.ID' column contains taxonomy. The",strong("Consensus.Lineage"),"and",strong("ReprSequence"),"headers must be as shown. The sample column names should not contain special characters (e.g., *, -, (), [], /). If you're encountering errors, try checking this first."),
                                img(src="ASV_example.png",height = "60%", width = "60%"),
                                width = 13,
                                style = "background-color:#FFFFFF; border-color:#ffffff; border-style: solid; border-width: 1.5px; margin-left:0px; margin-right:30px; padding: 10px",
@@ -278,18 +281,21 @@ ui <- navbarPage(id = "navbarID",
         
         
         #### Total read plot ####
-        tabPanel("Read plot",
+        tabPanel("Read plot", value = "readtab",
                  sidebarLayout(
                    sidebarPanel(h4("Select preferences"),
                                 radioButtons("box_select","What kind of plot?",choices = c("Box","Bar"),selected = "Bar", inline = TRUE),
+                                hr(style = "border-width: 3px; border-color:#A9A9A9"),
+                                numericInput("read_yaxis_limit","Change the y-axis limit",value = 100000),
                                 selectInput("read_sortby_axis","How do you want to group your data?",choices = NULL),
+                                hr(style = "border-width: 3px; border-color:#A9A9A9"),
                                 #selectInput("read_colour","How do you want to colour your data?",choices = "Updating"),
                                 #selectInput("read_meta_group","Select specific metadata group",choices = "Updating"),
                                 #textInput("read_meta_key","Provide a keyword"),
-                                numericInput("read_yaxis_limit","Change the y-axis limit",value = 100000),
                                 #textInput("read_xaxis","Provide an x-axis label",value = "Samples"),
                                 #textInput("read_yaxis","Provide a y-axis label",value = "Total reads following DADA2"),
                                 #textInput("read_legend_label","Provide a legend title"),
+                                hr(style = "border-width: 3px; border-color:#A9A9A9"),
                                 radioButtons("read_panel","Do you want panel borders?",c("Yes","No"),selected = "Yes", inline = TRUE),
                                 sliderInput("read_panel_spacing","Modify panel spacing",min = 0,max = 20,step = 1,value = 0),
                                 sliderInput("read_width","Change bar width",min=0, max=1, step = 0.1, value = 0.9),
@@ -336,8 +342,10 @@ ui <- navbarPage(id = "navbarID",
         #### Taxa bar plot analysis ####
         tabPanel("Taxonomy relative abundance",
                  sidebarLayout(
-                   sidebarPanel(h4("Select preferences"),
+                   sidebarPanel(
                                 sliderInput("bar_cutoff","Select your cutoff",min = 0, max = 100, step = 1, value = 20),
+                                actionButton("bar_start",label = "Start!",width = 334),
+                                hr(style = "border-width: 3px; border-color:#A9A9A9"),
                                 # textInput("bar_plot_x",label = "Enter x-axis",value = "SampleName"),
                                 # textInput("bar_plot_y",label = "Enter y-axis",value = "Percentage"),
                                 selectInput("bar_sortby_xaxis", label = "How do you want to group your samples?",choice = "Updating"),
@@ -347,6 +355,7 @@ ui <- navbarPage(id = "navbarID",
                                 #textInput("bar_xaxis","Provide a x-axis label","Samples"),
                                 #textInput("bar_yaxis","Provide a y-axis label","Read proportions (%)"),
                                 #textInput("bar_legend_label","Provide a legend title",""),
+                                hr(style = "border-width: 3px; border-color:#A9A9A9"),
                                 radioButtons("bar_panel_border","Do you want panel borders?",choices = c("Yes","No"),selected = "Yes", inline = TRUE),
                                 sliderInput("bar_panel_spacing","Modify panel spacing",min = 0, max = 30, value = 0, step = 1),
                                 # selectInput("bar_fill_col",label = "Select bar colour",choices = c("Set1","Set2","Set3","Paired"),selected = "Paired" ),
@@ -375,7 +384,6 @@ ui <- navbarPage(id = "navbarID",
                                box(
                                  sliderInput("taxa_plot_out_w","Plot width",min = 0, max = 2000,step = 100,value = 600),
                                  sliderInput("taxa_plot_out_h","Plot height",min = 0, max = 2000,step = 100,value = 400),
-                                 actionButton("bar_start",label = "Start!"),
                                  downloadButton("bar_download","Save figure"),
                                  downloadButton("bar_table_download","Save table"),
                                  width = 3
@@ -394,18 +402,22 @@ ui <- navbarPage(id = "navbarID",
         #### Bubble plot ####
         tabPanel("Relative Abundance Bubble plot",
                  sidebarLayout(
-                   sidebarPanel(h4("Select preferences"),
-                                # radioButtons("b1_new_old","Do you want the 'old' or 'new' bubbleplot?", c("New","Old"), selected = "New", inline = TRUE),
+                   sidebarPanel(
                                 textInput("b1_ab_thresh","Relative abundace threshold (%)", value = 20),
+                                actionButton("bubble_start",label = "Start!", width = 335),
+                                hr(style = "border-width: 3px; border-color:#A9A9A9"),
                                 radioButtons("b1_incl_percent","Do you want to include percent abundance numbers?",c("Yes","No"), selected = "Yes", inline = TRUE),
-                                sliderInput("b1_num_dec","Set the number of decimals (0 to 5)",min = 0, max = 5, value = 0, step = 1, ticks = FALSE),
+                                numericInput("b1_num_dec","Set the number of decimals (0 to 5)",value = 2,min = 0, max = 5),
+                                hr(style = "border-width: 3px; border-color:#A9A9A9"),
                                 selectInput("b1_sort_axis","How do you want to order your individual samples?",choices = "Updating"),
                                 selectInput("b1_sort_param","How do you want to group samples (i.e., faceting)?", choices = "Updating"),
                                 selectInput("b1_color_param","How do you want to colour your bubbles?", choices = "Updating"),
+                                selectInput("b1_tax_sort","By what taxonomic level will the y-axis be sorted?",c("Phylum","Class","Order","Family","Genus","Species")),
+                                hr(style = "border-width: 3px; border-color:#A9A9A9"),
                                 checkboxInput("b1_include_read","Do you want to include sample counts in a read plot?", FALSE),
                                 checkboxInput("b1_include_taxa", "Do you want to include taxon read proportions?", FALSE),
+                                hr(style = "border-width: 3px; border-color:#A9A9A9"),
                                 checkboxInput("b1_second_facet", "Do you want a second facet?", FALSE),
-                                #radioButtons("b1_second_facet","Do you want to group by a second category?",choices = c("Yes","No"), selected = "No", inline = TRUE),
                                 
                                 conditionalPanel(
                                   condition = "input.b1_second_facet == true",
@@ -418,13 +430,12 @@ ui <- navbarPage(id = "navbarID",
                                   selectInput("b1_third_facet_meta","Choose the third ordering",choices = "Updating"),
                                 ),
                                 
-                                radioButtons("b1_confirm_sort","Do you want to sort the y-axis by taxonomic classification?",c("Yes"), selected = "Yes", inline = TRUE),
-                                selectInput("b1_tax_sort","By what taxonomic level will the y-axis be sorted?",c("Phylum","Class","Order","Family","Genus","Species")),
+                                # radioButtons("b1_confirm_sort","Do you want to sort the y-axis by taxonomic classification?",c("Yes"), selected = "Yes", inline = TRUE),
+                                hr(style = "border-width: 3px"),
                                 textInput("b1_tax_keyword","Filter for specific or multiple taxa (example: staph,coryn). Must be separated by a comma; do not include spaces"),
                                 selectInput("b1_meta_group","Select a metadata category for data filtering",choices = "Updating"),
                                 textInput("b1_meta_keyword","Provide a specific keyword for the metadata filtering. For multiple, use a comma with no spaces (Example: canada,japan"),
-                                br(),
-                                h4("Choose facetting options"),
+                                hr(style = "border-width: 3px; border-color:#A9A9A9"),
                                 radioButtons("b1_panel_border","Do you want panel borders?",choices = c("Yes","No"),selected = "No", inline = TRUE),
                                 radioButtons("b1_facet_side_x","Where do you want the sample bar?",c("Top","Bottom"),selected = "Bottom",inline = TRUE),
                                 radioButtons("b1_facet_side_y","Where do you want the taxon bar?",c("Left","Right"),selected = "Left",inline = TRUE),
@@ -451,7 +462,6 @@ ui <- navbarPage(id = "navbarID",
                                
                                sliderInput("b1_plot_out_w","Plot width",min = 0, max = 2000,step = 100,value = 600),
                                sliderInput("b1_plot_out_h","Plot height",min = 0, max = 2000,step = 100,value = 600),
-                               actionButton("bubble_start",label = "Start!"),
                                downloadButton("b1_bubble_download","Save figure"),
                                downloadButton("b1_data_table","Save table"),
                                width = 3
@@ -471,16 +481,21 @@ ui <- navbarPage(id = "navbarID",
         #### Bray curtis PCOA ####
         tabPanel("Bray-Curtis PCoA Triplot",
                  sidebarLayout(
-                   sidebarPanel(h4("Select preferences"),
+                   sidebarPanel(
                                 # fileInput("bray_metadata","Upload metadata"),
-                                numericInput("pcoa_srs_depth","Select your SRS depth",min = 0, value = 1000),
+                                numericInput("pcoa_srs_depth","Select your SRS depth.",min = 0, value = 1000),
+                                actionButton("pcoa_start",label = "Start!",width = 335),
+                                hr(style = "border-width: 3px"),
                                 numericInput("pcoa_env_thresh", "Select your p-value threshold (0 - 1)", min = 0, max = 1, value = 0.5),
                                 numericInput("pcoa_env_R_thresh", "Select your R-value threshold (0 - 1)", min = 0, max = 1, value = 0.5),
                                 numericInput("pcoa_taxa_thresh", "Select your taxon abundance (0 - 100)", min = 0, max = 100, value = 5),
+                                # actionButton("pcoa_start",label = "Start!",width = 335),
+                                hr(style = "border-width: 3px"),
                                 selectInput("pcoa_fill_col","Select your fill colour",choices = "Updating"),
                                 sliderInput("pcoa_size_select", "Change your point size", value = 5,min = 0, max = 15),
                                 checkboxInput("pcoa_gradient", "Do you want a colour gradient instead?", value = FALSE),
                                 selectInput("pcoa_pallet_selection","Select a specific colour pallet", choices = c("viridis","magma","plasma","inferno","cividis","mako","rocket","turbo")),
+                                hr(style = "border-width: 3px"),
                                 checkboxInput("pcoa_sample_labels", "Do you want to label your samples?", value = FALSE),
                                 checkboxInput("shape_choice","Do you want to add a shape variable?",value = FALSE),
                                 
@@ -491,6 +506,7 @@ ui <- navbarPage(id = "navbarID",
                                 ),
                                 #selectInput("pcoa_elips_col","Select your elipsis color",choices = "Updating"),
                                 checkboxInput("pcoa_elips","Do you want to include statistically generated elipses?", value = FALSE),
+                                # actionButton("pcoa_start",label = "Start!",width = 335),
                                 # radioButtons("pcoa_elips","Do you want statistically generated elipses?", choices = c("Yes", "No"),inline = TRUE),
                                 width = 3,
                                 style = "overflow-y:scroll; max-height: 850px; position:relative;border-color:#000000"
@@ -513,7 +529,6 @@ ui <- navbarPage(id = "navbarID",
                                  sliderInput("pcoa_plot_outw","Plot width",min = 0, max = 3000,step = 100,value = 1000),
                                  sliderInput("pcoa_plot_outh","Plot height",min = 0, max = 3000,step = 100,value = 600),
                                  # downloadButton("pcoa_merged_df","Download pcoa data"),
-                                 actionButton("pcoa_start",label = "Start!"),
                                  downloadButton("pcoa_envfit_table","Download triplot stats table"),
                                  downloadButton("pcoa_envfit_filt_table", "Download triplot filtered stats table"),
                                  downloadButton("pcoa_download","Save figure"),
@@ -532,19 +547,23 @@ ui <- navbarPage(id = "navbarID",
         #### UniFrac Plot ####
         tabPanel("UniFrac PCoA Triplot",
                  sidebarLayout(
-                   sidebarPanel(h5("Please upload your data"),
+                   sidebarPanel(
                                 # checkboxInput("uni_extra_meta","Do you want to use a different metadata file?"),
                                 # conditionalPanel(
                                 #   condition = "input.uni_extra_meta == true",
                                   # fileInput("uni_metadata","Upload the metadata table"),
                                   # ),
                                 fileInput("unifrac_tree","Please upload your rooted phylogenetic tree (in Newick format)"),
-                                # fileInput("uni_meta_file","Metadata table"),
+                                hr(style = "border-width: 3px"),
+                                numericInput("uni_srs_depth", label = "Select your sampling depth.", value = 5000),
                                 selectInput("uni_diss_select",label = "Select your type of UniFrac", choices = c("unweighted","weighted")),
-                                numericInput("uni_srs_depth", label = "Select your sampling depth", value = 5000),
+                                actionButton("uni_pcoa_start","Start!", width = 335),
+                                # fileInput("uni_meta_file","Metadata table"),
+                                hr(style = "border-width: 3px"),
                                 numericInput("uni_env_thresh", label = "Select your p-value threshold (0 to 1)",value = 0.5, min = 0, max = 1),
                                 numericInput("uni_env_r_thresh", label = "Select your R-value threshold (0 to 1)", value = 0.5, min = 0, max = 1),
                                 numericInput("uni_taxa_thresh",label = "Select your taxon abundance (0 - 100)", value = 5),
+                                hr(style = "border-width: 3px"),
                                 selectInput("uni_pcoa_fill_col",label = "Select your fill colour", choices = "Updating"),
                                 sliderInput("uni_pcoa_size_select", "Change your point size", value = 5,min = 0, max = 15),
                                 checkboxInput("uni_pcoa_gradient", "Do you want a colour gradient instead?", value = FALSE),
@@ -576,7 +595,6 @@ ui <- navbarPage(id = "navbarID",
                                  
                                  sliderInput("uni_pcoa_plot_outw","Plot width",min = 0, max = 3000,step = 100,value = 1000),
                                  sliderInput("uni_pcoa_plot_outh","Plot height",min = 0, max = 3000,step = 100,value = 600),
-                                 actionButton("uni_pcoa_start","START"),
                                  downloadButton("uni_pcoa_download","Save figure"),
                                  downloadButton("uni_stats_full","Download full stats table"),
                                  downloadButton("uni_stats_filtered","Download filtered stats table"),
@@ -592,86 +610,26 @@ ui <- navbarPage(id = "navbarID",
                  )
         ),
         
-        
-        
-        # #### Ranked abundance plot ####
-        # tabPanel("Ranked abundance plot",
-        #          sidebarLayout(
-        #            sidebarPanel(h4("Select preferences"),
-        #                         actionButton("ranked_start",label = "Start!"),
-        #                         # radioButtons("ranked_new_old","Do you want the 'old' or 'new' bubbleplot?", c("New","Old"), selected = "New", inline = TRUE),
-        #                         numericInput("ranked_threshold","Relative abundace threshold (%)", min = 0, max = 1, value = 0.9),
-        #                         radioButtons("ranked_incl_percent","Do you want to include percenta abundance numbers?",c("Yes","No"), selected = "Yes", inline = TRUE),
-        #                         sliderInput("ranked_num_dec","Set the number of decimals (0 to 5)",min = 0, max = 5, value = 0, step = 1, ticks = FALSE),
-        #                         selectInput("ranked_sort_axis","How do you want to order your samples?",choices = "Updating"),
-        #                         selectInput("ranked_sort_param","How do you want to group your samples (facet)?",choices = "Updating"),
-        #                         radioButtons("ranked_second_facet","Do you want to group by a second category?",choices = c("Yes","No"), selected = "No", inline = TRUE),
-        #                         selectInput("ranked_second_facet_meta","Choose the second ordering",choices = "Updating"),
-        #                         selectInput("ranked_color_param","How do you want to colour your bubbles?", choices = "Updating"),
-        #                         radioButtons("ranked_confirm_sort","Do you want to sort the y-axis by taxonomic classification?",c("Yes","No"), selected = "Yes", inline = TRUE),
-        #                         selectInput("ranked_tax_sort","By what taxonomic level will the y-axis be sorted?",c("Phylum","Class","Order","Family","Genus","Species")),
-        #                         textInput("ranked_tax_keyword","Filter for specific taxa (e.g., 'staph')"),
-        #                         #selectInput("b1_meta_group","Select a metadata category for data filtering",choices = "Updating"),
-        #                         #textInput("b1_meta_keyword","Provide a specific keyword for the metadata filtering"),
-        #                         br(),
-        #                         h4("Choose facetting options"),
-        #                         radioButtons("ranked_panel_border","Do you want panel borders?",choices = c("Yes","No"),selected = "No", inline = TRUE),
-        #                         radioButtons("ranked_facet_side_x","Where do you want the sample bar?",c("Top","Bottom"),selected = "Bottom",inline = TRUE),
-        #                         radioButtons("ranked_facet_side_y","Where do you want the taxon bar?",c("Left","Right"),selected = "Left",inline = TRUE),
-        #                         sliderInput("ranked_panel_spacing","Modify the facet spacing",min = 0, max = 20, value = 0),  
-        #                         width = 3,
-        #                         style = "overflow-y:scroll; max-height: 850px; position:relative;border-color:#000000"
-        #            ),
-        #            mainPanel(width = 9,
-        #                      br(),
-        #                      dataTableOutput("ranked_table_out"),
-        #                      fluidRow(box(
-        #                        # (textInput("b1_bubble_width","Plot width",value = 10),
-        #                        #   textInput("b1_bubble_height", "Plot height",value = 8),
-        #                        #   width = 3,
-        #                        # ),
-        #                        # box(
-        #                        downloadButton("ranked_data_table","Save table"),
-        #                        sliderInput("ranked_plot_out_w","Plot width",min = 0, max = 2000,step = 100,value = 600),
-        #                        sliderInput("ranked_plot_out_h","Plot height",min = 0, max = 2000,step = 100,value = 600),
-        #                        downloadButton("ranked_bubble_download","Save figure"),
-        #                        width = 3
-        #                      )
-        #                      ),
-        #                      br(),
-        #                      br(),
-        #                      plotOutput("ranked_plot_out") %>% withSpinner(type = 1,color.background = "white"),
-        #                      style = "overflow-y:scroll; max-height: 850px; position:relative;"
-        #                      
-        #                      
-        #            )
-        #          )
-        # ),
-        
-        
         #### Next Plot ####
         
         # #### FAQ PAGE ####
-        # tabPanel(title = "FAQ",
-        #          sidebarLayout(
-        #            sidebarPanel(
-        #              "Oopsies",
-        #              style = "background-color:#FFFFFF; border-color:#000000; border-style: solid; border-width: 1.5px; margin-left:0px; margin-right:30px; padding: 10px",
-        #            ),
-        #            mainPanel(
-        #              fluidRow(
-        #                box("SO YOU GOTS SOME QUESTIONS?",
-        #                    uiOutput("helppdf"),
-        #                    width = 12,
-        #                    height = 200,
-        #                    style = "background-color:#FFFFFF; border-color:#000000; border-style: solid; border-width: 1.5px; margin-left:0px; margin-right:30px; padding: 10px; height: 850px",
-        #                    
-        #                    
-        #                )
-        #              )
-        #            )
-        #          )
-        # )
+        tabPanel(title = "FAQ",
+                 sidebarLayout(NULL,
+                   mainPanel(h1("Frequently asked questions and common problems"),
+                             uiOutput("helpme")
+                     # fluidRow(
+                     #   box("SO YOU GOTS SOME QUESTIONS?",
+                     #       uiOutput("helppdf"),
+                     #       width = 12,
+                     #       height = 200,
+                     #       style = "background-color:#FFFFFF; border-color:#000000; border-style: solid; border-width: 1.5px; margin-left:0px; margin-right:30px; padding: 10px; height: 850px",
+                     # 
+                     # 
+                     #   )
+                     # )
+                   )
+                 )
+        )
         
         
 )
