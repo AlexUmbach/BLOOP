@@ -2390,7 +2390,7 @@ server <- function(input, output, session) {
     pcoa_envfit_df <- as.data.frame(pcoa_envfit$vectors$arrows * sqrt(pcoa_envfit$vectors$r))
     pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$r)
     pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$pvals)
-    colnames(pcoa_envfit_df) <- c("axis1", "axis2", "R", "pvalue")
+    colnames(pcoa_envfit_df) <- c("axis1", "axis2", "R2", "pvalue")
     pcoa_envfit_df$R <- round(pcoa_envfit_df$R, 2)
     pcoa_envfit_df$pvalue <- round(pcoa_envfit_df$pvalue, 4)
     pcoa_envfit_df
@@ -2591,7 +2591,7 @@ server <- function(input, output, session) {
         geom_label(
           data = pcoa_envfit_df_filt,
           aes(
-            label = "Rvalue",
+            label = "R2value",
             x = pcoa_envfit_df_filt$axis1 / 3,
             y = pcoa_envfit_df_filt$axis2 / 3
           ),
@@ -2952,7 +2952,7 @@ server <- function(input, output, session) {
       pcoa_envfit_df <- as.data.frame(pcoa_envfit$vectors$arrows * sqrt(pcoa_envfit$vectors$r))
       pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$r)
       pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$pvals)
-      colnames(pcoa_envfit_df) <- c("axis1", "axis2", "R", "pvalue")
+      colnames(pcoa_envfit_df) <- c("axis1", "axis2", "R2", "pvalue")
       pcoa_envfit_df$R <- round(pcoa_envfit_df$R, 2)
       pcoa_envfit_df$pvalue <- round(pcoa_envfit_df$pvalue, 4)
       # pcoa_envfit_df$pvaluecorr <- pcoa_envfit_df$pvalue*100
@@ -2967,7 +2967,7 @@ server <- function(input, output, session) {
       pcoa_envfit_df <- as.data.frame(pcoa_envfit$vectors$arrows * sqrt(pcoa_envfit$vectors$r))
       pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$r)
       pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$pvals)
-      colnames(pcoa_envfit_df) <- c("axis1", "axis2", "R", "pvalue")
+      colnames(pcoa_envfit_df) <- c("axis1", "axis2", "R2", "pvalue")
       pcoa_envfit_df$R <- round(pcoa_envfit_df$R, 2)
       pcoa_envfit_df$pvalue <- round(pcoa_envfit_df$pvalue, 4)
       # pcoa_envfit_df$pvaluecorr <- pcoa_envfit_df$pvalue*100
@@ -3200,7 +3200,7 @@ server <- function(input, output, session) {
         geom_label(
           data = pcoa_envfit_df_filt,
           aes(
-            label = "Rvalue",
+            label = "R2value",
             x = pcoa_envfit_df_filt$axis1 / 3,
             y = pcoa_envfit_df_filt$axis2 / 3
           ),
