@@ -1034,9 +1034,19 @@ server <- function(input, output, session) {
     ## Sort the table by taxonomic level, then combine the proportions for each sample with a matching taxonomy
     data_long_bar_filt <- data_long_bar_filt %>% group_by(SampleName, eval(parse(text=paste("data_long_bar_filt$",isolate(input$bar_taxon_level))))) %>% summarize(Percentage = sum(Percentage))
     
+    
+
+    
+    
+    
     ## Rename the columns, join with metadata
     colnames(data_long_bar_filt) <- c("SampleName","Taxonomy", "Percentage")
     data_long_bar_filt <- subset(data_long_bar_filt, select = c("SampleName", "Taxonomy", "Percentage"))
+    
+    ## I need something here to remove the IDs from phyla/class/order whatever so that they are all treated as one. This is an issue for taxa that are not resolved. 
+    data_long_bar_filt$Taxonomy <- gsub("_.*","",data_long_bar_filt$Taxonomy)
+    
+    
     data_long_bar_filt <- left_join(data_long_bar_filt, meta_data_table, by = "SampleName")
     
     ## Include only specific taxa within the plot
@@ -1280,20 +1290,18 @@ server <- function(input, output, session) {
     filtered_table <- data_filtered_table()
     req(input$bubble_start)
     
-    
     # ## This removes samples from the ASV tables that don't have a corresponding metadata row: THIS IS WORKING
     meta_samplist <- meta_data_table$SampleName
     filtered_table <- filtered_table[, names(filtered_table) %in% meta_samplist]
     
     ## Initial transformations:
-    ## Produce a prop table and filter it to a specific threshold
+    ## Produce a prop table
     B2_data_prop <- prop.table(as.matrix(filtered_table), 2) * 100
     B2_data_prop <- as.data.frame(B2_data_prop)
     
     ## If the table contains any columns with zero reads, the column reports NA, and the script fails after this point.
-    ## These columns must be removed first.
+    ## These columns must be removed first. This should be exceedingly rare and likely represent failed samples or controls
     B2_data_prop <- B2_data_prop[, colSums(is.na(B2_data_prop)) == 0]
-    
     
     ## This checks each column for values > than the selected threshold. If found, all values in the row are kept, regardless of threshold.
     B2_data_prop <- B2_data_prop %>% filter_all(any_vars(. >= as.numeric(isolate(input$b1_ab_thresh))))
@@ -1381,6 +1389,7 @@ server <- function(input, output, session) {
     B2_data_prop <- data_bubble_reactive_new()
     meta_data_table <- meta_datafile()
     unfiltered_table <- data_unfiltered_table()
+    filtered_table <- data_filtered_table()
     B2_data_long <-
       reshape2::melt(
         B2_data_prop,
@@ -1388,6 +1397,9 @@ server <- function(input, output, session) {
         variable.name = as.character("SampleName"),
         value.name = "Percentage"
       )
+    
+    # Collect all samples
+    b1_all_samples <- data.frame(SampleName = colnames(filtered_table))
     
     
     ## Add representative sequences back into the data by merging tables based on taxonomy. If collapsed, skips.
@@ -1409,19 +1421,31 @@ server <- function(input, output, session) {
     
     
     
-    ## Filter above a threshold, append metadata, and round decimals -- I think this needs to be moved after the filtering
+    ## Remove any zero-values from the data so that they aren't plotted. But why are there zeros here in the first place? Because the initial filtering step keeps all column/rows where atleast one sample is above a specific threshold, keeping zero-values. This might be useful for keeping the samples I need. 
     
     data_long_bubble <- B2_data_long
+    
     data_long_bubble <-
       dplyr::filter(data_long_bubble, Percentage > 0)
-    data_long_bubble <-
-      left_join(data_long_bubble,
-                meta_data_table,
-                by = "SampleName",
-                copy = TRUE)
     
+    # if(input$b1_all_samples == TRUE){
+    #   fake_taxon_df <- b1_all_samples %>% group_by(SampleName) %>% summarize(Percentage = 5, TaxaName = "AAaFAKE_TAXON_Nitro",
+    #                                                                          Taxonomy = "AAAFAKE_TAXON_Nitro",
+    #                                                                          ReprSequence = "AAAAAAAAFFFFAAAAAKEEEE")
+    #   data_long_bubble <- merge(b1_all_samples, data_long_bubble, by = "SampleName", all.x = TRUE)
+    #   data_long_bubble <-
+    #     left_join(data_long_bubble,
+    #               meta_data_table,
+    #               by = "SampleName",
+    #               copy = TRUE)
+    # } else {
     
-    
+      data_long_bubble <-
+        left_join(data_long_bubble,
+                  meta_data_table,
+                  by = "SampleName",
+                  copy = TRUE)
+
     ## Round percentages to a given decimal places
     data_long_bubble$Percentage <-
       round(data_long_bubble$Percentage,

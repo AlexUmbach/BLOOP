@@ -440,6 +440,7 @@ ui <- navbarPage(id = "navbarID",
                                 radioButtons("b1_facet_side_x","Where do you want the sample bar?",c("Top","Bottom"),selected = "Bottom",inline = TRUE),
                                 radioButtons("b1_facet_side_y","Where do you want the taxon bar?",c("Left","Right"),selected = "Left",inline = TRUE),
                                 sliderInput("b1_panel_spacing","Modify the facet spacing",min = 0, max = 20, value = 0),  
+                                # checkboxInput("b1_all_samples","Include all samples?",FALSE),
                                 width = 3,
                                 style = "overflow-y:scroll; max-height: 850px; position:relative;border-color:#000000"
                    ),
@@ -460,8 +461,8 @@ ui <- navbarPage(id = "navbarID",
                                # ),
                                # box(
                                
-                               sliderInput("b1_plot_out_w","Plot width",min = 0, max = 2000,step = 100,value = 600),
-                               sliderInput("b1_plot_out_h","Plot height",min = 0, max = 2000,step = 100,value = 600),
+                               sliderInput("b1_plot_out_w","Plot width",min = 0, max = 4000,step = 100,value = 600),
+                               sliderInput("b1_plot_out_h","Plot height",min = 0, max = 4000,step = 100,value = 600),
                                downloadButton("b1_bubble_download","Save figure"),
                                downloadButton("b1_data_table","Save table"),
                                width = 3
