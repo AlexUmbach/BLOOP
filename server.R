@@ -599,16 +599,7 @@ server <- function(input, output, session) {
   
   ############ Total read plot  ############ 
   
-  #Read plot start button
-  # observeEvent(input$read_start, {
-  #   input$read_start
-  # })
-  # read_start <- eventReactive(input$read_start, {
-  #   req(input$read_start)
-  #   TRUE
-  # })
-  
-  #Metadata options
+  ## Read table metadata options
   observeEvent(input$meta_file,{
     req(input$meta_file)
     ## Incorporate the meta file column names into every appropriate input
@@ -618,13 +609,13 @@ server <- function(input, output, session) {
     meta_colnames <- meta_colnames[meta_colnames != "SampleName"]
     ## Update the selections - read plot
     # isolate({
-    updateSelectInput(session, "read_sortby_axis", choices = meta_colnames)
-    updateSelectInput(session, "read_meta_group", choices = meta_colnames)
+    updateSelectInput(session, "read_sortby_axis", choices = sort(meta_colnames))
+    updateSelectInput(session, "read_meta_group", choices = sort(meta_colnames))
     # updateSelectInput(session,"read_meta_key",choices = read_meta_list)
     updateSliderInput(session, "read_plot_out_w")
     # updateSelectInput(session,"read_colour",choices = colnames(meta_datafile()))
-    updateSelectInput(session, "read_sortby_axis", choices = meta_colnames)
-    updateSelectInput(session, "read_meta_group", choices = meta_colnames)
+    updateSelectInput(session, "read_sortby_axis", choices = sort(meta_colnames))
+    updateSelectInput(session, "read_meta_group", choices = sort(meta_colnames))
     updateSliderInput(session, "read_plot_out_w")
     # })
   })
@@ -775,7 +766,8 @@ server <- function(input, output, session) {
           #legend.position = "none",
           axis.title = element_text(size = 14, face = NULL),
           axis.text.y = element_text(size = 16),
-          strip.text.x = element_text(size = 10, face = "bold")
+          strip.text.x = element_text(size = 10, face = "bold"),
+          strip.background = element_rect(fill = "white"),
         )
     }
     
@@ -799,6 +791,7 @@ server <- function(input, output, session) {
           #legend.position = "none",
           axis.title = element_text(size = 14, face = NULL),
           axis.text.y = element_text(size = 16),
+          strip.background = element_rect(fill = "white"),
           strip.text.x = element_text(size = 10, face = "bold")
         )
     }
@@ -853,7 +846,7 @@ server <- function(input, output, session) {
     })
   
   
-  #### Bar Plot ####
+  #### Taxonomic Bar Plot ####
   
   ## Update selection - Bar plot
   observeEvent(input$meta_file,{
@@ -866,7 +859,7 @@ server <- function(input, output, session) {
     ## Update the selections - read plot
     # isolate({
     
-    updateSelectInput(session, "bar_sortby_xaxis", choices = meta_colnames)
+    updateSelectInput(session, "bar_sortby_xaxis", choices = sort(meta_colnames))
     updateSelectInput(session, "bar_taxon_level")
     updateTextInput(session, "bar_plotheight")
     updateTextInput(session, "bar_plotwidth")
@@ -1109,7 +1102,7 @@ server <- function(input, output, session) {
   
   barplot_reactive <- reactive({
     data_long_bar_filt <- data_long_bar_filt_re()
-    
+
     bar_plot <- ggplot(data = data_long_bar_filt,
                        aes(x = SampleName,
                            y = Percentage, width = 1,
@@ -1154,6 +1147,7 @@ server <- function(input, output, session) {
           #legend.position = "none",
           axis.title = element_text(size = 10, face = NULL),
           axis.text.y = element_text(size = 16),
+          strip.background = element_rect(fill = "white"),
           strip.text.x = element_text(size = 10, face = "bold"),
         )
     }
@@ -1178,6 +1172,7 @@ server <- function(input, output, session) {
           #legend.position = "none",
           axis.title = element_text(size = 10, face = NULL),
           axis.text.y = element_text(size = 16),
+          strip.background = element_rect(fill = "white"),
           strip.text.x = element_text(size = 10, face = "bold"),
         )
     }
@@ -1270,15 +1265,16 @@ server <- function(input, output, session) {
     meta_colnames <- colnames(meta_datafile)
     meta_colnames <- c(colnames(meta_datafile), "TaxaName")
     meta_colnames <- meta_colnames[meta_colnames != "SampleName"]
-    updateSelectInput(session, "b1_sort_param", choices = meta_colnames)
-    updateSelectInput(session, "b1_color_param", choices = meta_colnames)
-    updateSelectInput(session, "b1_meta_group", choices = meta_colnames)
+    updateSelectInput(session, "b1_sort_param", choices = sort(meta_colnames))
+    updateSelectInput(session, "b1_color_param", choices = sort(meta_colnames))
+    updateSelectInput(session, "b1_meta_group", choices = sort(meta_colnames))
     updateTextInput(session, "b1_bubble_width")
     updateTextInput(session, "b1_bubble_height")
     updateTabItems(session, "b1_meta_keyword")
-    updateSelectInput(session, "b1_second_facet_meta", choices = meta_colnames)
-    updateSelectInput(session, "b1_third_facet_meta", choices = meta_colnames)
-    updateSelectInput(session, "b1_sort_axis", choices = meta_colnames)
+    updateSelectInput(session, "b1_second_facet_meta", choices = sort(meta_colnames))
+    updateSelectInput(session, "b1_third_facet_meta", choices = sort(meta_colnames))
+    updateSelectInput(session, "b1_sort_axis", choices = sort(meta_colnames))
+    updateSelectInput(session, "b1_rename_x", choices = sort(meta_colnames))
   })
   
   
@@ -1451,13 +1447,12 @@ server <- function(input, output, session) {
       round(data_long_bubble$Percentage,
             digits = as.numeric(isolate(input$b1_num_dec)))
     
-    ## New taxa filtering
-    if (is.na(isolate(input$b1_tax_keyword) == TRUE)) {
-      warning("No specific taxon selected. Script will continue without filtering by taxa.")
-    } else {
+    
+    ## Selecting specific taxa
+    if (!is.na(isolate(input$b1_tax_keyword))) {
       # Split the input$b1_tax_keyword into a list of keywords using ","
       tax_keywords <- strsplit(isolate(input$b1_tax_keyword), ",")[[1]]
-      
+      if (length(tax_keywords) > 0){
       # Create a pattern by pasting the keywords with "|" for OR condition
       pattern <- paste(tax_keywords, collapse = "|")
       
@@ -1473,9 +1468,34 @@ server <- function(input, output, session) {
       
       # Display a warning message indicating taxa filtering is selected
       warning("Taxa filtering selected.")
+      }
     }
     
+    ## Filtering specific taxa
+    if (!is.na(isolate(input$b1_tax_remove))){
+      # Split the input$b1_tax_keyword into a list of keywords using ","
+      tax_rem_keywords <- strsplit(isolate(input$b1_tax_remove), ",")[[1]]
+      if (length(tax_rem_keywords) > 0){
+      
+      # Create a pattern by pasting the keywords with "|" for OR condition
+      pattern <- paste(tax_rem_keywords, collapse = "|")
+
+      # Perform pattern matching using grepl
+      taxon_hits <- grepl(
+        pattern = pattern,
+        ignore.case = TRUE,
+        x = data_long_bubble$Taxonomy
+      )
+
+      # Subset the data_long_bubble dataset based on taxon_hits
+      data_long_bubble <- data_long_bubble[!taxon_hits, ]
+
+      # Display a warning message indicating taxa filtering is selected
+      warning("Taxa filtering selected.")
+      }
+    }
     
+    ## Filtering samples by a metadata category
     if (is.na(isolate(input$b1_meta_group))) {
       warning("No metadata category selected. Script will continue without filtering by groups.")
     } else {
@@ -1543,7 +1563,7 @@ server <- function(input, output, session) {
   bubble_plot_re <- reactive({
     data_long_bubble <- data_data_long_re()
     
-    ## Plot the Data:
+    #### Main Bubble plot: ####
     bubble_plot <- ggplot(
       data_long_bubble,
       aes(
@@ -1565,6 +1585,10 @@ server <- function(input, output, session) {
     ) +
       guides(fill = FALSE, colour = FALSE)+
       labs(size = "Relative abundance")
+    
+    if (input$b1_rename_x_check == TRUE){
+      bubble_plot <- bubble_plot + scale_x_discrete(breaks = data_long_bubble$SampleName, labels = data_long_bubble$SampleShort)
+    }
     
     ## Sorting the y-axis and faceting options. I need to overhaul this to use three levels of nested faceting
     ## So for some reason you need to use the * operators instead of the + for faceting. Not sure why this changed. 
@@ -1836,7 +1860,8 @@ server <- function(input, output, session) {
         theme_bw() + theme(
           axis.text = element_text(colour = "black", size = 10),
           axis.line = element_blank(),
-          #strip.background.y = element_rect(fill = "white"),
+          strip.background.y = element_rect(fill = "white"),
+          strip.background.x = element_rect(fill = "white"),
           panel.spacing = unit(as.numeric(input$b1_panel_spacing), "points"),
           legend.position = "bottom",
           #panel.grid = element_line(colour = "grey"),
@@ -1859,7 +1884,8 @@ server <- function(input, output, session) {
       bubble_plot <- bubble_plot +
         theme_bw() + theme(
           axis.text = element_text(colour = "black", size = 10),
-          #strip.background.y = element_rect(fill = "white"),
+          strip.background.y = element_rect(fill = "white"),
+          strip.background.x = element_rect(fill = "white"),
           panel.spacing = unit(as.numeric(input$b1_panel_spacing), "points"),
           legend.position = "bottom",
           #panel.grid = element_line(colour = "grey"),
@@ -2027,6 +2053,7 @@ server <- function(input, output, session) {
         panel.spacing = unit(as.numeric(input$b1_panel_spacing), "points"),
         legend.position = "none",
         axis.title.x = element_blank(),
+        strip.background = element_rect(fill = "white", color = "black"),
         axis.title = element_text(size = 10, face = NULL),
         axis.text.y = element_text(size = 10),
         strip.text.x = element_blank(),
@@ -2119,29 +2146,78 @@ server <- function(input, output, session) {
       taxonomy_read_final$full_lineage <- rownames(taxonomy_read_final)
       
       
-      ## New taxa filtering
-      if (is.na(isolate(input$b1_tax_keyword)) == TRUE) {
-        warning("No specific taxon selected. Script will continue without filtering by taxa.")
-      } else {
+      ## Selecting specific taxa
+      if (!is.na(isolate(input$b1_tax_keyword))) {
         # Split the input$b1_tax_keyword into a list of keywords using ","
         tax_keywords <- strsplit(isolate(input$b1_tax_keyword), ",")[[1]]
-        
-        # Create a pattern by pasting the keywords with "|" for OR condition
-        pattern <- paste(tax_keywords, collapse = "|")
-        
-        # Perform pattern matching using grepl
-        taxon_hits <- grepl(
-          pattern = pattern,
-          ignore.case = TRUE,
-          x = taxonomy_read_final$full_lineage
-        )
-        
-        # Subset the data_long_bubble dataset based on taxon_hits
-        taxonomy_read_final <- taxonomy_read_final[taxon_hits, ]
-        
-        # Display a warning message indicating taxa filtering is selected
-        warning("Taxa filtering selected.")
+        if (length(tax_keywords) > 0){
+          # Create a pattern by pasting the keywords with "|" for OR condition
+          pattern <- paste(tax_keywords, collapse = "|")
+          
+          # Perform pattern matching using grepl
+          taxon_hits <- grepl(
+            pattern = pattern,
+            ignore.case = TRUE,
+            x = data_long_bubble$Taxonomy
+          )
+          
+          # Subset the data_long_bubble dataset based on taxon_hits
+          data_long_bubble <- data_long_bubble[taxon_hits, ]
+          
+          # Display a warning message indicating taxa filtering is selected
+          warning("Taxa filtering selected.")
+        }
       }
+      
+      ## Filtering specific taxa
+      if (!is.na(isolate(input$b1_tax_remove))){
+        # Split the input$b1_tax_keyword into a list of keywords using ","
+        tax_rem_keywords <- strsplit(isolate(input$b1_tax_remove), ",")[[1]]
+        if (length(tax_rem_keywords) > 0){
+          
+          # Create a pattern by pasting the keywords with "|" for OR condition
+          pattern <- paste(tax_rem_keywords, collapse = "|")
+          
+          # Perform pattern matching using grepl
+          taxon_hits <- grepl(
+            pattern = pattern,
+            ignore.case = TRUE,
+            x = data_long_bubble$Taxonomy
+          )
+          
+          # Subset the data_long_bubble dataset based on taxon_hits
+          data_long_bubble <- data_long_bubble[!taxon_hits, ]
+          
+          # Display a warning message indicating taxa filtering is selected
+          warning("Taxa filtering selected.")
+        }
+      }
+      
+      
+      
+      # ## New taxa filtering
+      # if (is.na(isolate(input$b1_tax_keyword)) == TRUE) {
+      #   warning("No specific taxon selected. Script will continue without filtering by taxa.")
+      # } else {
+      #   # Split the input$b1_tax_keyword into a list of keywords using ","
+      #   tax_keywords <- strsplit(isolate(input$b1_tax_keyword), ",")[[1]]
+      #   
+      #   # Create a pattern by pasting the keywords with "|" for OR condition
+      #   pattern <- paste(tax_keywords, collapse = "|")
+      #   
+      #   # Perform pattern matching using grepl
+      #   taxon_hits <- grepl(
+      #     pattern = pattern,
+      #     ignore.case = TRUE,
+      #     x = taxonomy_read_final$full_lineage
+      #   )
+      #   
+      #   # Subset the data_long_bubble dataset based on taxon_hits
+      #   taxonomy_read_final <- taxonomy_read_final[taxon_hits, ]
+      #   
+      #   # Display a warning message indicating taxa filtering is selected
+      #   warning("Taxa filtering selected.")
+      # }
       
       taxonomy_read_final <- taxonomy_read_final[taxonomy_read_final$TaxaName %in% data_long_bubble$TaxaName, ,drop = FALSE]
       
@@ -2202,6 +2278,7 @@ server <- function(input, output, session) {
         axis.title.y = element_blank(),
         axis.text.y = element_blank(),
         strip.text.x = element_text(size=10,face="bold"),
+        strip.background = element_rect(fill = "white", color = "black"),
         panel.spacing = unit(as.numeric(input$b1_panel_spacing), "points"),
         panel.border = element_rect(colour="black",size=0,fill=NA),
         axis.ticks = element_line(colour = "black"),
@@ -2302,9 +2379,9 @@ server <- function(input, output, session) {
     meta_colnames <- colnames(meta_datafile)
     meta_colnames <- c(colnames(meta_datafile), "TaxaName")
     meta_colnames <- meta_colnames[meta_colnames != "SampleName"]
-    updateSelectInput(session, "pcoa_fill_col", choices = meta_colnames)
-    updateSelectInput(session, "pcoa_elips_col", choices = meta_colnames)
-    updateSelectInput(session, "pcoa_shape", choices = meta_colnames)
+    updateSelectInput(session, "pcoa_fill_col", choices = sort(meta_colnames))
+    updateSelectInput(session, "pcoa_elips_col", choices = sort(meta_colnames))
+    updateSelectInput(session, "pcoa_shape", choices = sort(meta_colnames))
     updateSelectInput(session, "pcoa_pallet_selection")
     updateSelectInput(session, "pcoa_gradient")
   })
@@ -2754,12 +2831,12 @@ server <- function(input, output, session) {
     meta_colnames <- c(colnames(meta_datafile), "TaxaName")
     meta_colnames <- meta_colnames[meta_colnames != "SampleName"]
     
-    updateSelectInput(session, "uni_pcoa_fill_col", choices = meta_colnames)
-    updateSelectInput(session, "uni_pcoa_elips_col", choices = meta_colnames)
-    updateSelectInput(session, "uni_pcoa_shape", choices = meta_colnames)
-    updateSelectInput(session, "uni_pcoa_fill_col", choices = meta_colnames)
-    updateSelectInput(session, "uni_pcoa_elips_col", choices = meta_colnames)
-    updateSelectInput(session, "uni_pcoa_shape", choices = meta_colnames)
+    updateSelectInput(session, "uni_pcoa_fill_col", choices = sort(meta_colnames))
+    updateSelectInput(session, "uni_pcoa_elips_col", choices = sort(meta_colnames))
+    updateSelectInput(session, "uni_pcoa_shape", choices = sort(meta_colnames))
+    updateSelectInput(session, "uni_pcoa_fill_col", choices = sort(meta_colnames))
+    updateSelectInput(session, "uni_pcoa_elips_col", choices = sort(meta_colnames))
+    updateSelectInput(session, "uni_pcoa_shape", choices = sort(meta_colnames))
     updateSelectInput(session, "uni_pcoa_pallet_selection")
     updateSelectInput(session, "uni_pcoa_gradient")
   })
@@ -3864,7 +3941,8 @@ server <- function(input, output, session) {
         theme_bw() + theme(
           axis.text = element_text(colour = "black", size = 10),
           axis.line = element_blank(),
-          #strip.background.y = element_rect(fill = "white"),
+          strip.background.y = element_rect(fill = "white"),
+          strip.background.x = element_rect(fill = "white"),
           panel.spacing = unit(as.numeric(input$ranked_panel_spacing), "points"),
           #panel.grid = element_line(colour = "grey"),
           #axis.line.y = element_line(colour="black",size=0.5),
@@ -3884,7 +3962,8 @@ server <- function(input, output, session) {
       bubble_plot = bubble_plot +
         theme_bw() + theme(
           axis.text = element_text(colour = "black", size = 10),
-          #strip.background.y = element_rect(fill = "white"),
+          strip.background.y = element_rect(fill = "white"),
+          strip.background.x = element_rect(fill = "white"),
           panel.spacing = unit(as.numeric(input$ranked_panel_spacing), "points"),
           #panel.grid = element_line(colour = "grey"),
           #axis.line.y = element_line(colour="black",size=0.5),
