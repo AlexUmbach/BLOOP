@@ -1,6 +1,6 @@
 ########################## SERVER LOGIC ############################
 server <- function(input, output, session) {
-  options(shiny.maxRequestSize = 200 * 1024 ^ 2) ## This sets the size limit for AOViz, 100 mb right now
+  options(shiny.maxRequestSize = 1000 * 1024 ^ 2) ## This sets the size limit for AOViz, 100 mb right now
   
   ## These generate NULL data to prevent the loading swirl from starting before press "start" on the analyses
   output$read_table_out <- renderDT(NULL)
@@ -1118,6 +1118,10 @@ server <- function(input, output, session) {
       position = "stack"
     )
     
+    if (input$bar_rename_check == TRUE){
+      bar_plot <- bar_plot + scale_x_discrete(breaks = data_long_bar_filt$SampleName, labels = data_long_bar_filt$SampleShort)
+    }
+    
     ## Add faceting for sorting
     bar_plot <- bar_plot +
       facet_grid(
@@ -1583,7 +1587,7 @@ server <- function(input, output, session) {
       rowsep = (1:100),
       sepwidth = c(5, 1)
     ) +
-      guides(fill = FALSE, colour = FALSE)+
+      guides(fill = "none", colour = "none")+
       labs(size = "Relative abundance")
     
     if (input$b1_rename_x_check == TRUE){
@@ -2299,11 +2303,11 @@ server <- function(input, output, session) {
   bubble_combined_plot_re <- reactive({
     req(input$bubble_start)
     bubble_plot <- bubble_plot_re()
-    read_plot <- bubble_read_plot_re()
-    taxa_readplot <- bubble_taxa_plot_re()
-    
+
     # If both the read plot and taxa proportion bar plots are selected:
     if(isolate(input$b1_include_read) == TRUE && isolate(input$b1_include_taxa)){
+      read_plot <- bubble_read_plot_re()
+      taxa_readplot <- bubble_taxa_plot_re()
       layout <- "
                 AA##
                 BBCC
@@ -2316,6 +2320,7 @@ server <- function(input, output, session) {
     
     # If only the read plot is selected
     else if(isolate(input$b1_include_read) == TRUE){
+      read_plot <- bubble_read_plot_re()
       bubble_plot <- read_plot + 
         bubble_plot + 
         plot_layout(ncol = 1, heights = c(0.1,1))
@@ -2324,11 +2329,12 @@ server <- function(input, output, session) {
     
     # If only the taxa proportion plot is selected
     else if(isolate(input$b1_include_taxa) == TRUE){
+      taxa_readplot <- bubble_taxa_plot_re()
       bubble_plot <- bubble_plot + 
         taxa_readplot + 
         plot_layout(nrow = 1, heights = c(0.10,1))
       bubble_plot
-    }
+    } else
     bubble_plot
   })
   
