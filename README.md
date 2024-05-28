@@ -1,5 +1,5 @@
 # What is AOViz?
-AOViz is an R and RShiny based app for visualizing amplicon sequence data. It is designed to allow users to quickly and efficiently visualize their amplicon datasets and produce near-publication-ready figures. Importantly, AOViz provides users with a high level of interactivity and customization during figure generation. By seemlessly combining amplicon datasets with provided metadata, users can more readily explore and visualize microbial community compositional patterns. AOViz is, and will continue to be, a work in progress. The main branch is stable and should do everything it says it will, but if you encounter any errors please let me know and I'll do my best to address them in a timely manner. 
+AOViz is an R and RShiny based app for visualizing amplicon sequence data. It is designed to allow users to quickly and efficiently visualize their amplicon datasets and produce "near-publication-ready" figures. Importantly, AOViz provides users with a high level of interactivity and customization during figure generation. By seemlessly combining amplicon datasets with provided metadata, users can more readily explore and visualize microbial community compositional patterns. AOViz is, and will continue to be, a work in progress. The main branch is stable and should do everything it says it will, but if you encounter any errors please let me know and I'll do my best to address them in a timely manner. 
 
 # Usage summary
 Because AOViz is built using RShiny, users can simply clone this repository to any location on their local machine and execute it by running the server.R script in RStudio (after installing the appropriate packages, of course)
@@ -12,3 +12,6 @@ Users require two files: an ASV table and an associated metadata table, both in 
 <b>Metadata table</b>
 
 ![meta_example](https://github.com/AlexUmbach/AOViz/assets/56092913/92f7a906-9470-4a62-9d37-ee022e306062)
+
+# Example figures
+AOViz produces four main plots: a sequencing depth plot, a taxonomic bar plot, a relative abundance bubble plot, and a PCoA triplot. These four plots are contained within seprate RShiny tabs and run independent of each other. Descriptions of these plots are produces are contained in their respective tabs. For each tab, there is an option to download the figure and associated data tables, as well as statistics when applicable (i.e., triplot). 
