@@ -418,6 +418,7 @@ ui <- navbarPage(id = "navbarID",
                                 hr(style = "border-width: 3px; border-color:#A9A9A9"),
                                 checkboxInput("b1_include_read","Do you want to include sample counts in a read plot?", FALSE),
                                 checkboxInput("b1_include_taxa", "Do you want to include taxon read proportions?", FALSE),
+                                checkboxInput("b1_fake_taxon","Do you want to show all samples regardless of present taxa?", value = FALSE),
                                 hr(style = "border-width: 3px; border-color:#A9A9A9"),
                                 checkboxInput("b1_second_facet", "Do you want a second facet?", FALSE),
                                 
@@ -501,7 +502,7 @@ ui <- navbarPage(id = "navbarID",
                                 hr(style = "border-width: 3px"),
                                 checkboxInput("pcoa_sample_labels", "Do you want to label your samples?", value = FALSE),
                                 checkboxInput("shape_choice","Do you want to add a shape variable?",value = FALSE),
-                                
+
                                 # Conditional for shape selection
                                 conditionalPanel(
                                   condition = "input.shape_choice == true",
@@ -536,8 +537,9 @@ ui <- navbarPage(id = "navbarID",
                                  downloadButton("pcoa_envfit_filt_table", "Download triplot filtered stats table"),
                                  downloadButton("pcoa_download","Save figure"),
                                  width = 6
-                               )
+                               ),
                              ),
+                             dataTableOutput("pcoa_stats_table"),
                              br(),
                              br(),
                              plotOutput("pcoa_plot_out") %>% withSpinner(type = 1,color.background = "white"),

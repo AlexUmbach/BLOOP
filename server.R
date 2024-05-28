@@ -682,11 +682,13 @@ server <- function(input, output, session) {
       
       read_plot <-
         read_plot + geom_bar(
-          aes(fill = as.factor(eval(
-            parse(text = paste(
-              "data_read_total$", isolate(input$read_sortby_axis)
-            ))
-          ))),
+          # aes(fill = as.factor(
+          #   eval(
+          #   parse(text = paste(
+          #     "data_read_total$", isolate(input$read_sortby_axis)
+          #   ))))
+          # ),
+          fill = "#D3D3D3",
           colour = "black",
           size = 0.4,
           alpha = 0.8,
@@ -707,11 +709,11 @@ server <- function(input, output, session) {
                           ))
       
       read_plot <- read_plot + geom_boxplot(
-        aes(fill = as.factor(eval(
-          parse(text = paste(
-            "data_read_total$", isolate(input$read_sortby_axis)
-          ))
-        ))),
+        # aes(fill = as.factor(eval(
+        #   parse(text = paste(
+        #     "data_read_total$", isolate(input$read_sortby_axis)
+        #   ))))),
+        fill = "#D3D3D3",
         position = "dodge2",
         alpha = 0.8,
         # size = input$read_width,
@@ -1402,16 +1404,30 @@ server <- function(input, output, session) {
     b1_all_samples <- data.frame(SampleName = colnames(filtered_table))
     
     
-    ## Add representative sequences back into the data by merging tables based on taxonomy. If collapsed, skips.
+    ## Add rep seqs back into data
+    # Create a column "Taxonomy" from the row names
     unfiltered_table$Taxonomy <- rownames(unfiltered_table)
-    if (input$is_main_collapsed == FALSE) {
-      unfiltered_table <- unfiltered_table[, c("Taxonomy", "ReprSequence")]
-    }
-    B2_data_long <- left_join(B2_data_long,
-                              unfiltered_table,
-                              by = "Taxonomy",
-                              copy = TRUE)
     
+    
+    # Create a filtered table for joining
+
+    if (input$is_main_collapsed == FALSE) {
+      unfiltered_selected <- unfiltered_table %>% 
+        select(Taxonomy, ReprSequence)
+      unfiltered_table <- unfiltered_table[, c("Taxonomy", "ReprSequence")]
+    } 
+    else if (input$is_main_collapsed == TRUE) {
+      unfiltered_selected <- unfiltered_table %>% 
+        select(Taxonomy)
+    }
+    
+    B2_data_long <- B2_data_long %>%
+      left_join(unfiltered_selected, by = "Taxonomy", copy = TRUE)
+    
+    # B2_data_long <- left_join(B2_data_long,
+    #                           unfiltered_table,
+    #                           by = "Taxonomy",
+    #                           copy = TRUE)
     
     ## Modify taxonomy names
     B2_data_long$Taxonomy <-
@@ -1420,25 +1436,25 @@ server <- function(input, output, session) {
     
     
     
-    
-    ## Remove any zero-values from the data so that they aren't plotted. But why are there zeros here in the first place? Because the initial filtering step keeps all column/rows where atleast one sample is above a specific threshold, keeping zero-values. This might be useful for keeping the samples I need. 
+    ## Remove any zero-values from the data so that they aren't plotted. But why are there zeros here in the first place? Because the initial filtering step keeps all column/rows where at least one sample is above a specific threshold, keeping zero-values. This might be useful for keeping the samples I need. 
     
     data_long_bubble <- B2_data_long
     
     data_long_bubble <-
       dplyr::filter(data_long_bubble, Percentage > 0)
     
-    # if(input$b1_all_samples == TRUE){
-    #   fake_taxon_df <- b1_all_samples %>% group_by(SampleName) %>% summarize(Percentage = 5, TaxaName = "AAaFAKE_TAXON_Nitro",
-    #                                                                          Taxonomy = "AAAFAKE_TAXON_Nitro",
-    #                                                                          ReprSequence = "AAAAAAAAFFFFAAAAAKEEEE")
-    #   data_long_bubble <- merge(b1_all_samples, data_long_bubble, by = "SampleName", all.x = TRUE)
-    #   data_long_bubble <-
-    #     left_join(data_long_bubble,
-    #               meta_data_table,
-    #               by = "SampleName",
-    #               copy = TRUE)
-    # } else {
+    ## This option allows a user to keep all samples within the plot regardless of taxon presence (i.e., a sample on the X-axis with no bubbles in the plot). This is achieved sloppily by adding in a fake taxon that is plotted and can be removed during post-processing. This fake taxon is added indepdenent of any abundance calculations and so does not affect proportions ore relative abundances or legend scaling. It is added at the abundance threshold set in the plot (e.g., 3%, 5%)
+    
+    ## Add in a fake taxonomy to show all samples
+    if(input$b1_fake_taxon == TRUE){
+      if(input$is_main_collapsed == FALSE){
+      fake_taxon_df <- data.frame(SampleName = unique(data_long_bubble$SampleName), Percentage = 1, TaxaName = "AAA_FAKE_TAXON_999999", Taxonomy = "d_AAAFAKETERIA;p_AAA_FAKE_TAXON_999999", ReprSequence = "AAAA")
+      }
+      else if (input$is_main_collapsed == TRUE){
+        fake_taxon_df <- data.frame(SampleName = unique(data_long_bubble$SampleName), Percentage = 1, TaxaName = "AAA_FAKE_TAXON_999999", Taxonomy = "d_AAAFAKETERIA;p_AAA_FAKE_TAXON_999999")
+      }
+      data_long_bubble <- rbind(data_long_bubble, fake_taxon_df)
+    }
     
       data_long_bubble <-
         left_join(data_long_bubble,
@@ -1562,7 +1578,6 @@ server <- function(input, output, session) {
       data_long_bubble
 
   })
-  
   
   bubble_plot_re <- reactive({
     data_long_bubble <- data_data_long_re()
@@ -2382,7 +2397,6 @@ server <- function(input, output, session) {
   observeEvent(input$meta_file, {
     req(input$meta_file)
     meta_datafile <- meta_datafile()
-    meta_colnames <- colnames(meta_datafile)
     meta_colnames <- c(colnames(meta_datafile), "TaxaName")
     meta_colnames <- meta_colnames[meta_colnames != "SampleName"]
     updateSelectInput(session, "pcoa_fill_col", choices = sort(meta_colnames))
@@ -2498,8 +2512,8 @@ server <- function(input, output, session) {
     pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$r)
     pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$pvals)
     colnames(pcoa_envfit_df) <- c("axis1", "axis2","R2", "pvalue")
-    pcoa_envfit_df$R2_rounded <- round(pcoa_envfit_df$R2, 2)
-    pcoa_envfit_df$pvalue <- round(pcoa_envfit_df$pvalue, 4)
+    pcoa_envfit_df$R2_rounded <- round(pcoa_envfit_df$R2, 5)
+    pcoa_envfit_df$pvalue <- round(pcoa_envfit_df$pvalue, 5)
     pcoa_envfit_df
   })
   
@@ -2677,34 +2691,34 @@ server <- function(input, output, session) {
             y = pcoa_envfit_df_filt$axis2 / 2
           ),
           size = 4
-        ) +
-        geom_label(
-          data = pcoa_envfit_df_filt,
-          aes(
-            label = pvalue,
-            x = pcoa_envfit_df_filt$axis1 / 3,
-            y = pcoa_envfit_df_filt$axis2 / 3
-          )
-        ) +
-        geom_label(
-          data = pcoa_envfit_df_filt,
-          aes(
-            label = R2_rounded,
-            x = pcoa_envfit_df_filt$axis1 / 3,
-            y = pcoa_envfit_df_filt$axis2 / 3
-          ),
-          hjust = 2
-        ) + 
-        geom_label(
-          data = pcoa_envfit_df_filt,
-          aes(
-            label = "R2value",
-            x = pcoa_envfit_df_filt$axis1 / 3,
-            y = pcoa_envfit_df_filt$axis2 / 3
-          ),
-          hjust = 3
-        )
-    }
+        )}
+        # geom_label(
+        #   data = pcoa_envfit_df_filt,
+        #   aes(
+        #     label = pvalue,
+        #     x = pcoa_envfit_df_filt$axis1 / 3,
+        #     y = pcoa_envfit_df_filt$axis2 / 3
+        #   )
+        # ) +
+        # geom_label(
+        #   data = pcoa_envfit_df_filt,
+        #   aes(
+        #     label = R2_rounded,
+        #     x = pcoa_envfit_df_filt$axis1 / 3,
+        #     y = pcoa_envfit_df_filt$axis2 / 3
+        #   ),
+        #   hjust = 2
+        # ) + 
+        # geom_label(
+        #   data = pcoa_envfit_df_filt,
+        #   aes(
+        #     label = "R2value",
+        #     x = pcoa_envfit_df_filt$axis1 / 3,
+        #     y = pcoa_envfit_df_filt$axis2 / 3
+        #   ),
+        #   hjust = 3
+        # )}
+    
     
     
     #If sample labels are selected:
@@ -2825,6 +2839,12 @@ server <- function(input, output, session) {
         scale = 4
       )
     })
+  
+  output$pcoa_stats_table <- renderDataTable({
+    bray_stats <- bc_pcoa_envfit_re()
+    # output$proc_alttext <- renderText("This is your stats data")
+    bray_stats
+  })
   
   
   
