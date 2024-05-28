@@ -16,15 +16,17 @@ Users require two files: an ASV table and an associated metadata table, both in 
 # Example figures
 AOViz produces four main plots: a sequencing depth plot, a taxonomic bar plot, a relative abundance bubble plot, and a PCoA triplot. These four plots are contained within seprate RShiny tabs and run independent of each other. Descriptions of these plots are produces are contained in their respective tabs. For each tab, there is an option to download the figure and associated data tables, as well as statistics when applicable (i.e., triplot). The examples below are directly out of AOViz
 
-Read plot (bar and box)
+
+# Read plot (bar and box)
 ![read_plot_bar_example](https://github.com/AlexUmbach/AOViz/assets/56092913/03e1096a-39ac-44a1-a8f2-b1eec417008b)
 ![read_plot_box_example](https://github.com/AlexUmbach/AOViz/assets/56092913/64021541-698e-452f-b9d0-767c1ca26089)
 
-Taxonomy bar plot (class)
+# Taxonomy bar plot (class)
 ![taxa_barplot_example](https://github.com/AlexUmbach/AOViz/assets/56092913/da04498a-6c86-47fc-83b0-d92caf03bbe9)
 
-Bubble plot
+# Bubble plot
 ![bubbleplot_5ab_example](https://github.com/AlexUmbach/AOViz/assets/56092913/8cdd7aba-06f6-4865-860d-1e57c2b1ad68)
 
-Bray-Curtis triplot. For this plot, arrows represent numeric medata fit to the PCoA coordinates. These arrows are associated with p-values and R2 values (contained within a stats table available for download).
+# Bray-Curtis triplot. 
+For this plot, arrows represent numeric medata fit to the PCoA coordinates. These arrows are associated with p-values and R2 values (contained within a stats table available for download). Taxonomic relative abundance information is also mapped to PCoA data and shown in ordination space. Also available in UniFrac if provided a tree in newick format. 
 ![braycurtis_triplot_example](https://github.com/AlexUmbach/AOViz/assets/56092913/d0627b17-48ae-40dc-b6b6-41b96e659dfe)
