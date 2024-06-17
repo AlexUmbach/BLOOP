@@ -2852,6 +2852,7 @@ server <- function(input, output, session) {
       )
     })
   
+  # Output the stats table
   output$pcoa_stats_table <- renderDataTable({
     bray_stats <- bc_pcoa_envfit_re()
     # output$proc_alttext <- renderText("This is your stats data")
@@ -3475,6 +3476,13 @@ server <- function(input, output, session) {
         scale = 4
       )}
   )
+  
+  # Output the stats table
+  output$unifrac_stats_table <- renderDataTable({
+    unifrac_stats <- uni_envfit_react()
+    # output$proc_alttext <- renderText("This is your stats data")
+    unifrac_stats
+  })
   
   
   

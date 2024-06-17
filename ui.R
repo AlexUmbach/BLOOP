@@ -607,6 +607,7 @@ ui <- navbarPage(id = "navbarID",
                                  width = 6
                                )
                              ),
+                             dataTableOutput("unifrac_stats_table"),
                              br(),
                              br(),
                              plotOutput("uni_pcoa_plot_out") %>% withSpinner(type = 1,color.background = "white"),
