@@ -3027,6 +3027,8 @@ server <- function(input, output, session) {
     req(input$uni_pcoa_start)
     pcoa_result <- uni_weighted_pcoa_react()
     
+    
+    
     pcoa_coords <- pcoa_result$vectors[, 1:2]
     pcoa_df <-
       data.frame(
@@ -3083,10 +3085,13 @@ server <- function(input, output, session) {
   uni_envfit_react <- reactive({
     req(input$uni_pcoa_start)
     meta_data_table <- uni_metadata_filt_react()
+    
+    pcoa_vectors <- as.data.frame(pcoa_result$vectors)
+    
     # meta_data_table <- meta_datafile()
     if (input$uni_diss_select == "unweighted"){
       pcoa_result <- uni_unweighted_pcoa_react()
-      pcoa_envfit <- envfit(pcoa_result$vectors, meta_data_table, perm = 10000)
+      pcoa_envfit <- envfit(pcoa_vectors, meta_data_table, perm = 10000)
       ## Scales the arrow vectors so they aren't huge
       pcoa_envfit_df <- as.data.frame(pcoa_envfit$vectors$arrows * sqrt(pcoa_envfit$vectors$r))
       pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$r)
@@ -3101,7 +3106,7 @@ server <- function(input, output, session) {
     #Fit the environmental variables to the PCoA for the weighted UniFrac
     else if (input$uni_diss_select == "weighted"){
       pcoa_result <- uni_weighted_pcoa_react()
-      pcoa_envfit <- envfit(pcoa_result$vectors, meta_data_table, perm = 10000)
+      pcoa_envfit <- envfit(pcoa_vectors, meta_data_table, perm = 10000)
       ## Scales the arrow vectors so they aren't huge
       pcoa_envfit_df <- as.data.frame(pcoa_envfit$vectors$arrows * sqrt(pcoa_envfit$vectors$r))
       pcoa_envfit_df <- cbind(pcoa_envfit_df, pcoa_envfit$vectors$r)
