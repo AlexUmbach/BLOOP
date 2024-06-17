@@ -419,6 +419,7 @@ ui <- navbarPage(id = "navbarID",
                                 checkboxInput("b1_include_read","Do you want to include sample counts in a read plot?", FALSE),
                                 checkboxInput("b1_include_taxa", "Do you want to include taxon read proportions?", FALSE),
                                 checkboxInput("b1_fake_taxon","Do you want to show all samples regardless of present taxa?", value = FALSE),
+                                checkboxInput("b1_factor_data","Do you want to factorize data?", value = FALSE),
                                 hr(style = "border-width: 3px; border-color:#A9A9A9"),
                                 checkboxInput("b1_second_facet", "Do you want a second facet?", FALSE),
                                 

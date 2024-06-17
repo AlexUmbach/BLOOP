@@ -1593,9 +1593,18 @@ server <- function(input, output, session) {
         fill = as.factor(eval(parse(
           text = isolate(input$b1_color_param)
         ))),
-        color = as.factor(eval(parse(
-          text = isolate(input$b1_color_param)
-        ))),
+        
+        if(input$b1_factor_data == TRUE){
+          color = as.factor(eval(parse(
+            text = isolate(input$b1_color_param)
+          )))
+        },
+        
+        if(input$b1_factor_data == FALSE){
+          color = eval(parse(
+            text = isolate(input$b1_color_param)
+          ))
+          },
         size = Percentage
       ),
       colsep = c(1:100),
@@ -2505,7 +2514,9 @@ server <- function(input, output, session) {
     meta_data_table <- bc_pcoa_metafilt()
     srs_table <- bc_srs_prop_re()
     
-    pcoa_envfit <- envfit(pcoa_result$vectors, meta_data_table, perm = 10000)
+    #conver to a dataframe
+    pcoa_vectors <- as.data.frame(pcoa_result$vectors)
+    pcoa_envfit <- envfit(pcoa_vectors, meta_data_table, perm = 10000)
     
     ## Scales the arrow vectors so they aren't huge
     pcoa_envfit_df <- as.data.frame(pcoa_envfit$vectors$arrows * sqrt(pcoa_envfit$vectors$r))
@@ -2590,7 +2601,7 @@ server <- function(input, output, session) {
     
     # Define the available shapes and colors
     # I need to add the option to include a gradient
-    available_shapes <- c(21, 22, 23, 24, 14, 13:1)
+    available_shapes <- c(21, 22, 23, 24, 25, 14, 13:1)
     available_colors <- 2:27
     available_fill <- 2:27
     
@@ -2624,8 +2635,8 @@ server <- function(input, output, session) {
       
       #Uses a colour gradient if selected
       if (input$pcoa_gradient == TRUE){
-        pcoa_plot <- pcoa_plot + scale_colour_viridis(option = input$pcoa_pallet_selection,discrete = TRUE)
-        pcoa_plot <- pcoa_plot + scale_fill_viridis(option = input$pcoa_pallet_selection,discrete = TRUE)
+        pcoa_plot <- pcoa_plot + scale_colour_viridis(option = input$pcoa_pallet_selection,discrete = TRUE, direction = -1)
+        pcoa_plot <- pcoa_plot + scale_fill_viridis(option = input$pcoa_pallet_selection,discrete = TRUE, direction = -1)
       } else {
         pcoa_plot <- pcoa_plot + scale_fill_manual(values = available_fill) +
           scale_colour_manual(values = available_fill)
@@ -2662,8 +2673,8 @@ server <- function(input, output, session) {
       
       ## If colour gradient is selected
       if (input$pcoa_gradient == TRUE){
-        pcoa_plot <- pcoa_plot + scale_colour_viridis(option = input$pcoa_pallet_selection,discrete = TRUE)
-        pcoa_plot <- pcoa_plot + scale_fill_viridis(option = input$pcoa_pallet_selection,discrete = TRUE)
+        pcoa_plot <- pcoa_plot + scale_colour_viridis(option = input$pcoa_pallet_selection,discrete = TRUE, direction = -1)
+        pcoa_plot <- pcoa_plot + scale_fill_viridis(option = input$pcoa_pallet_selection,discrete = TRUE, direction = -1)
       } else {
         pcoa_plot <- pcoa_plot + scale_fill_manual(values = available_fill) +
           scale_colour_manual(values = available_fill)
@@ -2792,7 +2803,8 @@ server <- function(input, output, session) {
         axis.ticks = element_line(colour = "black"),
         axis.ticks.y = element_line(colour = "black"),
         axis.line.y = element_line(colour = "black")
-      )
+      ) +
+    guides(fill = guide_legend(override.aes = list(shape = 22)))
     
     # Plot PCoA
     pcoa_plot
@@ -3236,8 +3248,8 @@ server <- function(input, output, session) {
       
       ## IF selected, allows you to colour based on a viridis gradient. Right now it requires rechecking the box to switch between gradients. I'll have to fix this in the future
       if (input$uni_pcoa_gradient == TRUE){
-        pcoa_plot <- pcoa_plot + scale_colour_viridis(option = input$uni_pcoa_pallet_selection,discrete = TRUE)
-        pcoa_plot <- pcoa_plot + scale_fill_viridis(option = input$uni_pcoa_pallet_selection,discrete = TRUE)
+        pcoa_plot <- pcoa_plot + scale_colour_viridis(option = input$uni_pcoa_pallet_selection,discrete = TRUE, direction = -1)
+        pcoa_plot <- pcoa_plot + scale_fill_viridis(option = input$uni_pcoa_pallet_selection,discrete = TRUE, direction = -1)
       } else {
         pcoa_plot <- pcoa_plot + scale_fill_manual(values = available_fill) +
           scale_colour_manual(values = available_fill)
@@ -3274,8 +3286,8 @@ server <- function(input, output, session) {
       
       #Setting a colour gradient, if selected
       if (input$uni_pcoa_gradient == TRUE){
-        pcoa_plot <- pcoa_plot + scale_colour_viridis(option = input$uni_pcoa_pallet_selection,discrete = TRUE)
-        pcoa_plot <- pcoa_plot + scale_fill_viridis(option = input$uni_pcoa_pallet_selection,discrete = TRUE)
+        pcoa_plot <- pcoa_plot + scale_colour_viridis(option = input$uni_pcoa_pallet_selection,discrete = TRUE, direction = -1)
+        pcoa_plot <- pcoa_plot + scale_fill_viridis(option = input$uni_pcoa_pallet_selection,discrete = TRUE, direction = -1)
       } else {
         pcoa_plot <- pcoa_plot + scale_fill_manual(values = available_fill) +
           scale_colour_manual(values = available_fill)
@@ -3409,7 +3421,8 @@ server <- function(input, output, session) {
         axis.ticks = element_line(colour = "black"),
         axis.ticks.y = element_line(colour = "black"),
         axis.line.y = element_line(colour = "black")
-      )
+      ) +
+    guides(fill = guide_legend(override.aes = list(shape = 22)))
     
     # Plot PCoA
     pcoa_plot
