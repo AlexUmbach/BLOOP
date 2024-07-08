@@ -865,6 +865,7 @@ server <- function(input, output, session) {
     updateSelectInput(session, "bar_taxon_level")
     updateTextInput(session, "bar_plotheight")
     updateTextInput(session, "bar_plotwidth")
+    updateSelectInput(session, "bar_second_facet", choices = sort(meta_colnames))
   })
   
   #
@@ -1125,6 +1126,7 @@ server <- function(input, output, session) {
     }
     
     ## Add faceting for sorting
+    if (isolate(input$bar_facet) == FALSE){
     bar_plot <- bar_plot +
       facet_grid(
         ~ eval(parse(text = isolate(input$bar_sortby_xaxis))),
@@ -1132,6 +1134,16 @@ server <- function(input, output, session) {
         scales = "free",
         switch = "both"
       )
+    }
+    
+    else if (isolate(input$bar_facet) == TRUE){
+      bar_plot <- bar_plot +
+        facet_nested(~ eval(parse(text = isolate(input$bar_sortby_xaxis))) + eval(parse(text = isolate(input$bar_second_facet))),
+                   space = "free",
+                   scales = "free",
+                   switch = "both"
+        )
+    }
     
     if (isolate(input$bar_panel_border == "Yes")) {
       bar_plot <- bar_plot + theme_bw() +

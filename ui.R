@@ -352,6 +352,12 @@ ui <- navbarPage(id = "navbarID",
                                 checkboxInput("bar_rename_check", "Do you want to relabel your samples with a SampleShort column?", FALSE),
                                 selectInput("bar_taxon_level", label = "Colour by which level?", choice = c("Genus","Family","Order","Class","Phylum")),
                                 textInput("taxon_subset","Filter for specific taxa (e.g., 'staph')",value = NA),
+                                checkboxInput("bar_facet","Do you want a second facet?",value = FALSE),
+                                
+                                conditionalPanel(
+                                  condition = "input.bar_facet == true",
+                                  selectInput("bar_second_facet","Choose the second ordering",choices = "Updating"),
+                                ),
                                 #textInput("bar_plot_fill","Select bar plot fill",value = "TaxaName"),
                                 #textInput("bar_xaxis","Provide a x-axis label","Samples"),
                                 #textInput("bar_yaxis","Provide a y-axis label","Read proportions (%)"),
