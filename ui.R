@@ -427,6 +427,12 @@ ui <- navbarPage(id = "navbarID",
                                 checkboxInput("b1_fake_taxon","Do you want to show all samples regardless of present taxa?", value = FALSE),
                                 checkboxInput("b1_factor_data","Do you want to factorize data?", value = FALSE),
                                 hr(style = "border-width: 3px; border-color:#A9A9A9"),
+                                # 
+                                # checkboxInput("b1_yaxis_facet", "Do you want to facet your y-axis by metadata?", FALSE),
+                                # conditionalPanel(
+                                #   condition = "input.b1_yaxis_facet == true",
+                                #   selectInput("b1_yaxis_facet_meta","Choose the second ordering",choices = "Updating"),
+                                
                                 checkboxInput("b1_second_facet", "Do you want a second facet?", FALSE),
                                 
                                 conditionalPanel(
@@ -471,8 +477,8 @@ ui <- navbarPage(id = "navbarID",
                                # ),
                                # box(
                                
-                               sliderInput("b1_plot_out_w","Plot width",min = 0, max = 4000,step = 100,value = 600),
-                               sliderInput("b1_plot_out_h","Plot height",min = 0, max = 4000,step = 100,value = 600),
+                               sliderInput("b1_plot_out_w","Plot width",min = 0, max = 4000,step = 10,value = 600),
+                               sliderInput("b1_plot_out_h","Plot height",min = 0, max = 4000,step = 10,value = 600),
                                downloadButton("b1_bubble_download","Save figure"),
                                downloadButton("b1_data_table","Save table"),
                                width = 3
